@@ -29,7 +29,7 @@ export function expirationTimeToMs(expirationTime: ExpirationTime): number {
 }
 
 function ceiling(num: number, precision: number): number {
-  return (((num / precision) | 0) + 1) * precision;
+  return (((num / precision) | 0) + 1) * precision;  //很重要：(num / precision)取整后再+1再*precision，也就是除的时候不够precision舍弃，但是最后多加回来了一个precision，这样对于num介于precision整数倍之间的值，返回的时间都一样，也就是说优先级一样，那么就不需要执行多次update
 }
 
 function computeExpirationBucket(

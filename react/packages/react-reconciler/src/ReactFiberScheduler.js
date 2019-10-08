@@ -1511,7 +1511,7 @@ function computeExpirationForFiber(currentTime: ExpirationTime, fiber: Fiber) {
   } else {
     // No explicit expiration context was set, and we're not currently
     // performing work. Calculate a new expiration time.
-    if (fiber.mode & ConcurrentMode) {
+    if (fiber.mode & ConcurrentMode) {  //逻辑与操作：判断fiber.mode是否再ConcurrentMode下
       if (isBatchingInteractiveUpdates) {
         // This is an interactive update
         expirationTime = computeInteractiveExpiration(currentTime);
@@ -1828,7 +1828,7 @@ let lastCommittedRootDuringThisBatch: FiberRoot | null = null;
 const timeHeuristicForUnitOfWork = 1;
 
 function recomputeCurrentRendererTime() {
-  const currentTimeMs = now() - originalStartTimeMs;
+  const currentTimeMs = now() - originalStartTimeMs; //currentTimeMs时间差：当前时间-js加载完成的时间=》let originalStartTimeMs: number = now();
   currentRendererTime = msToExpirationTime(currentTimeMs);
 }
 
@@ -1939,12 +1939,12 @@ function requestCurrentTime() { // 计算到期时间
   // But the scheduler time can only be updated if there's no pending work, or
   // if we know for certain that we're not in the middle of an event.
 
-  if (isRendering) {
+  if (isRendering) {  //渲染过程中，初次不会进来，还没到渲染阶段
     // We're already rendering. Return the most recently read time.
     return currentSchedulerTime;
   }
   // Check if there's pending work.
-  findHighestPriorityRoot();
+  findHighestPriorityRoot(); //调度队列中找权限最高的
   if (
     nextFlushedExpirationTime === NoWork ||
     nextFlushedExpirationTime === Never
