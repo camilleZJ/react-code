@@ -1847,16 +1847,16 @@ function scheduleCallbackWithExpirationTime(
   root: FiberRoot,
   expirationTime: ExpirationTime,
 ) {
-  if (callbackExpirationTime !== NoWork) {
+  if (callbackExpirationTime !== NoWork) {  //记录请求ReactScheduler的时候用的过期时间
     // A callback is already scheduled. Check its expiration time (timeout).
-    if (expirationTime > callbackExpirationTime) {
+    if (expirationTime > callbackExpirationTime) {  //优先级较低，还是执行之前的调度
       // Existing callback has sufficient timeout. Exit.
       return;
-    } else {
+    } else {  //优先级较高，需要把上一次的调度取消
       if (callbackID !== null) {
         // Existing callback has insufficient timeout. Cancel and schedule a
         // new one.
-        cancelDeferredCallback(callbackID);
+        cancelDeferredCallback(callbackID);  //取消上一次的调度需要根据callbackID
       }
     }
     // The request callback timer is already running. Don't start a new one.
@@ -1868,7 +1868,7 @@ function scheduleCallbackWithExpirationTime(
   const currentMs = now() - originalStartTimeMs;
   const expirationTimeMs = expirationTimeToMs(expirationTime);
   const timeout = expirationTimeMs - currentMs;
-  callbackID = scheduleDeferredCallback(performAsyncWork, {timeout});
+  callbackID = scheduleDeferredCallback(performAsyncWork, {timeout});  //进行调度，产生callbackID
 }
 
 // For every call to renderRoot, one of onFatal, onComplete, onSuspend, and
