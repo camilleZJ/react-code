@@ -183,10 +183,10 @@ export function applyDerivedStateFromProps(
   }
 }
 
-const classComponentUpdater = {
+const classComponentUpdater = { //classComponent初始化的时候会拿到该updater对象
   isMounted,
   enqueueSetState(inst, payload, callback) {
-    const fiber = ReactInstanceMap.get(inst);
+    const fiber = ReactInstanceMap.get(inst); //inst: this.setState时传进来的this
     const currentTime = requestCurrentTime();
     const expirationTime = computeExpirationForFiber(currentTime, fiber);
 
@@ -227,7 +227,7 @@ const classComponentUpdater = {
     const expirationTime = computeExpirationForFiber(currentTime, fiber);
 
     const update = createUpdate(expirationTime);
-    update.tag = ForceUpdate;
+    update.tag = ForceUpdate; //与setState区别，默认是UpdateState，所以上面没设定
 
     if (callback !== undefined && callback !== null) {
       if (__DEV__) {

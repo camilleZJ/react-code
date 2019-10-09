@@ -353,11 +353,12 @@ if (__DEV__ && replayFailedUnitOfWorkWithInvokeGuardedCallback) {
 }
 
 function resetStack() {
-  if (nextUnitOfWork !== null) {
-    let interruptedWork = nextUnitOfWork.return;
+  //nextUnitOfWork用于记录render阶段Fiber树遍历过程中下一个需要执行的节点。在resetStack中分别被重置，他只会指向workInProgress
+  if (nextUnitOfWork !== null) {  //nextUnitOfWork !== null代表异步任务之前被打断了存在nextUnitOfWork中，没有新来任务打断，浏览器空余时候会来执行这个任务
+    let interruptedWork = nextUnitOfWork.return;  //被打断的任务
     while (interruptedWork !== null) {
-      unwindInterruptedWork(interruptedWork);
-      interruptedWork = interruptedWork.return;
+      unwindInterruptedWork(interruptedWork); //优先级高的任务已经执行了，为了防止Stack错乱，需要回退
+      interruptedWork = interruptedWork.return; //回退之后重新开始优先级任务的更新
     }
   }
 
@@ -366,6 +367,7 @@ function resetStack() {
     checkThatStackIsEmpty();
   }
 
+  //均设置为初始值
   nextRoot = null;
   nextRenderExpirationTime = NoWork;
   nextLatestAbsoluteTimeoutMs = -1;
@@ -1617,7 +1619,7 @@ function retrySuspendedRoot(
 }
 
 function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
-  recordScheduleUpdate();
+  recordScheduleUpdate(); //记录更新流程的时间
 
   if (__DEV__) {
     if (fiber.tag === ClassComponent) {
@@ -1627,11 +1629,14 @@ function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
   }
 
   // Update the source fiber's expiration time
+  //没有更新: fiber.expirationTime === NoWork
+  //更新完成之后会把fiber.expirationTime去掉，fiber.expirationTime存在说明在更新过程中
+  //fiber.expirationTime存在说明还没更新完，和expirationTime相比属于上次的更新,fiber.expirationTime > expirationTime 说明上次的更新优先级低于本次的
   if (
     fiber.expirationTime === NoWork ||
     fiber.expirationTime > expirationTime
   ) {
-    fiber.expirationTime = expirationTime;
+    fiber.expirationTime = expirationTime; //指向当前的更新,设置优先级更高的更新
   }
   let alternate = fiber.alternate;
   if (
@@ -1644,16 +1649,16 @@ function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
   // Walk the parent path to the root and update the child expiration time.
   let node = fiber.return;
   let root = null;
-  if (node === null && fiber.tag === HostRoot) {
-    root = fiber.stateNode;
+  if (node === null && fiber.tag === HostRoot) { //只有RootFiber的return为null，其余都会指向其唯一的父节点,HostRoot就是代表RootFiber
+    root = fiber.stateNode; //FiberRoot
   } else {
-    while (node !== null) {
+    while (node !== null) {  //否则就node.return一层层向上找，直到找到RootFiber，也就是tag=HostRoot,并且return为null
       alternate = node.alternate;
       if (
         node.childExpirationTime === NoWork ||
         node.childExpirationTime > expirationTime
       ) {
-        node.childExpirationTime = expirationTime;
+        node.childExpirationTime = expirationTime; //node.childExpirationTime使其子树种ExpirationTime优先级最高的，和当前更新的expirationTime对比，看看是不是其子树种优先级最高的
         if (
           alternate !== null &&
           (alternate.childExpirationTime === NoWork ||
@@ -1676,14 +1681,14 @@ function scheduleWorkToRoot(fiber: Fiber, expirationTime): FiberRoot | null {
     }
   }
 
-  if (root === null) {
+  if (root === null) { //说明没有RootFiber节点，即有问题
     if (__DEV__ && fiber.tag === ClassComponent) {
       warnAboutUpdateOnUnmounted(fiber);
     }
     return null;
   }
 
-  if (enableSchedulerTracing) {
+  if (enableSchedulerTracing) {  //跟踪应用更新
     const interactions = __interactionsRef.current;
     if (interactions.size > 0) {
       const pendingInteractionMap = root.pendingInteractionMap;
@@ -1726,16 +1731,21 @@ function scheduleWork(fiber: Fiber, expirationTime: ExpirationTime) {
     return;
   }
 
+  //isWorking正在渲染也就是有任务正在执行
+  //nextRenderExpirationTime !== NoWork 异步任务还没执行完
+  //expirationTime < nextRenderExpirationTime目前的任务优先级高于这个未进行完的异步任务->react16提供的: 高优先级任务打断了低优先级的任务
   if (
     !isWorking &&
     nextRenderExpirationTime !== NoWork &&
     expirationTime < nextRenderExpirationTime
   ) {
     // This is an interruption. (Used for performance tracking.)
-    interruptedBy = fiber;
+    interruptedBy = fiber; //记录: 被哪个任务打断
     resetStack();
   }
   markPendingPriorityLevel(root, expirationTime);
+  //isWorking包含isCommitting阶段，isCommitting阶段不能不被打断：fiber树整体渲染之后(update完成)更新到DOM上
+  //单个应用来说nextRoot 永远等于 root，一般不考虑不等
   if (
     // If we're in the render phase, we don't need to schedule this root
     // for an update, because we'll do it before we exit...
@@ -1744,9 +1754,10 @@ function scheduleWork(fiber: Fiber, expirationTime: ExpirationTime) {
     // ...unless this is a different root than the one we're rendering.
     nextRoot !== root
   ) {
-    const rootExpirationTime = root.expirationTime;
+    const rootExpirationTime = root.expirationTime; //markPendingPriorityLevel可能会使传入的expirationTime和root.expirationTime不等，所以此处不用传入的
     requestWork(root, rootExpirationTime);
   }
+  //let nestedUpdateCount: number = 0   nestedUpdateCount用来记录是否有嵌套等在生命周期方法中产生更新导致应用无限循环更新的计数器，用于提醒用户书写的不正确的代码
   if (nestedUpdateCount > NESTED_UPDATE_LIMIT) {
     // Reset this back to zero so subsequent updates don't throw.
     nestedUpdateCount = 0;
@@ -1966,19 +1977,20 @@ function requestCurrentTime() { // 计算到期时间
 // requestWork is called by the scheduler whenever a root receives an update.
 // It's up to the renderer to call renderRoot at some point in the future.
 function requestWork(root: FiberRoot, expirationTime: ExpirationTime) {
+  debugger; //调试
   addRootToSchedule(root, expirationTime);
-  if (isRendering) {
+  if (isRendering) {  //循环已经开始了，只需把root加入到队列里即可，循环执行的时候后自动执行到
     // Prevent reentrancy. Remaining work will be scheduled at the end of
     // the currently rendering batch.
     return;
   }
 
-  if (isBatchingUpdates) {
+  if (isBatchingUpdates) { //用来存储更新产生的上下文的变量
     // Flush work at the end of the batch.
-    if (isUnbatchingUpdates) {
+    if (isUnbatchingUpdates) {  //用来存储更新产生的上下文的变量
       // ...unless we're inside unbatchedUpdates, in which case we should
       // flush it now.
-      nextFlushedRoot = root;
+      nextFlushedRoot = root;  //来标志下一个需要渲染的root和对应的expirtaionTime
       nextFlushedExpirationTime = Sync;
       performWorkOnRoot(root, Sync, true);
     }
@@ -1987,22 +1999,22 @@ function requestWork(root: FiberRoot, expirationTime: ExpirationTime) {
 
   // TODO: Get rid of Sync and use current time?
   if (expirationTime === Sync) {
-    performSyncWork();
+    performSyncWork();  //同步无法被打断
   } else {
-    scheduleCallbackWithExpirationTime(root, expirationTime);
+    scheduleCallbackWithExpirationTime(root, expirationTime); //异步调度
   }
 }
 
 function addRootToSchedule(root: FiberRoot, expirationTime: ExpirationTime) {
   // Add the root to the schedule.
   // Check if this root is already part of the schedule.
-  if (root.nextScheduledRoot === null) {
+  if (root.nextScheduledRoot === null) { //该root还没有被加入到Schedule链表中
     // This root is not already scheduled. Add it.
     root.expirationTime = expirationTime;
-    if (lastScheduledRoot === null) {
+    if (lastScheduledRoot === null) { //Schedule链表中为空，没有加入root
       firstScheduledRoot = lastScheduledRoot = root;
       root.nextScheduledRoot = root;
-    } else {
+    } else { //把root放入链表最后
       lastScheduledRoot.nextScheduledRoot = root;
       lastScheduledRoot = root;
       lastScheduledRoot.nextScheduledRoot = firstScheduledRoot;
@@ -2015,7 +2027,7 @@ function addRootToSchedule(root: FiberRoot, expirationTime: ExpirationTime) {
       expirationTime < remainingExpirationTime
     ) {
       // Update the priority.
-      root.expirationTime = expirationTime;
+      root.expirationTime = expirationTime;  //更新root优先级
     }
   }
 }
