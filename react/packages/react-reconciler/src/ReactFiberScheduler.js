@@ -1977,7 +1977,7 @@ function requestCurrentTime() { // 计算到期时间
 // requestWork is called by the scheduler whenever a root receives an update.
 // It's up to the renderer to call renderRoot at some point in the future.
 function requestWork(root: FiberRoot, expirationTime: ExpirationTime) {
-  debugger; //调试
+  // debugger; //调试
   addRootToSchedule(root, expirationTime);
   if (isRendering) {  //循环已经开始了，只需把root加入到队列里即可，循环执行的时候后自动执行到
     // Prevent reentrancy. Remaining work will be scheduled at the end of
