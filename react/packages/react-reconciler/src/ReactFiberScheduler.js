@@ -1861,14 +1861,14 @@ function scheduleCallbackWithExpirationTime(
     }
     // The request callback timer is already running. Don't start a new one.
   } else {
-    startRequestCallbackTimer();
+    startRequestCallbackTimer(); //timer相关都是polyfill中的东西，涉及其他，本课程不讲解
   }
 
   callbackExpirationTime = expirationTime;
   const currentMs = now() - originalStartTimeMs;
   const expirationTimeMs = expirationTimeToMs(expirationTime);
   const timeout = expirationTimeMs - currentMs;
-  callbackID = scheduleDeferredCallback(performAsyncWork, {timeout});  //进行调度，产生callbackID
+  callbackID = scheduleDeferredCallback(performAsyncWork, {timeout});  //进行调度，产生callbackID，performAsyncWork：requestWork中同步的调度
 }
 
 // For every call to renderRoot, one of onFatal, onComplete, onSuspend, and

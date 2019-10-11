@@ -78,17 +78,17 @@ var deadlineObject = {
 };
 
 function ensureHostCallbackIsScheduled() {
-  if (isExecutingCallback) {
+  if (isExecutingCallback) {  //已经有callbackNode在调用了，开启了调度会进行循环处理，所以不需要再开启了
     // Don't schedule work yet; wait until the next time we yield.
     return;
   }
   // Schedule the host callback using the earliest expiration in the list.
   var expirationTime = firstCallbackNode.expirationTime;
-  if (!isHostCallbackScheduled) {
+  if (!isHostCallbackScheduled) { //host callback没有进行调度
     isHostCallbackScheduled = true;
   } else {
     // Cancel the existing host callback.
-    cancelHostCallback();
+    cancelHostCallback();  //取消之前的
   }
   requestHostCallback(flushWork, expirationTime);
 }
@@ -297,9 +297,9 @@ function unstable_wrapCallback(callback) {
   };
 }
 
-function unstable_scheduleCallback(callback, deprecated_options) {
+function unstable_scheduleCallback(callback, deprecated_options) { //deprecated_options即将被废弃的参数
   var startTime =
-    currentEventStartTime !== -1 ? currentEventStartTime : getCurrentTime();
+    currentEventStartTime !== -1 ? currentEventStartTime : getCurrentTime(); //getCurrentTime()：localDate.now()，获取到的就是getCurrentTime
 
   var expirationTime;
   if (
@@ -308,7 +308,7 @@ function unstable_scheduleCallback(callback, deprecated_options) {
     typeof deprecated_options.timeout === 'number'
   ) {
     // FIXME: Remove this branch once we lift expiration times out of React.
-    expirationTime = startTime + deprecated_options.timeout;
+    expirationTime = startTime + deprecated_options.timeout;  //进入此判断，注意上面的注释提示：把expiration times葱react中单拿出的时候这个if判断就去掉，都是走下面的
   } else {
     switch (currentPriorityLevel) {
       case ImmediatePriority:
@@ -337,15 +337,15 @@ function unstable_scheduleCallback(callback, deprecated_options) {
   // Insert the new callback into the list, ordered first by expiration, then
   // by insertion. So the new callback is inserted any other callback with
   // equal expiration.
-  if (firstCallbackNode === null) {
+  if (firstCallbackNode === null) {  //单向列表头部firstCallbackNode
     // This is the first callback in the list.
     firstCallbackNode = newNode.next = newNode.previous = newNode;
     ensureHostCallbackIsScheduled();
-  } else {
+  } else {  //链表不为空
     var next = null;
     var node = firstCallbackNode;
-    do {
-      if (node.expirationTime > expirationTime) {
+    do { //按照优先级排序，把优先级高的排在最前面
+      if (node.expirationTime > expirationTime) { //找到第一个优先级比当前expirationTime小的
         // The new callback expires before this one.
         next = node;
         break;
@@ -353,11 +353,11 @@ function unstable_scheduleCallback(callback, deprecated_options) {
       node = node.next;
     } while (node !== firstCallbackNode);
 
-    if (next === null) {
+    if (next === null) {  //没找到=》链表中的所有优先级都比expirationTime高，expirationTime优先级最低
       // No callback with a later expiration was found, which means the new
       // callback has the latest expiration in the list.
       next = firstCallbackNode;
-    } else if (next === firstCallbackNode) {
+    } else if (next === firstCallbackNode) { //expirationTime优先级高于当前的firstCallbackNode的优先级，即expirationTime最高的=》需要放到链表的最前面
       // The new callback has the earliest expiration in the entire list.
       firstCallbackNode = newNode;
       ensureHostCallbackIsScheduled();
@@ -460,7 +460,7 @@ if (hasNativePerformanceNow) {
   };
 } else {
   getCurrentTime = function() {
-    return localDate.now();
+    return localDate.now();  //浏览器获取的是这个时间
   };
 }
 
@@ -468,7 +468,7 @@ var requestHostCallback;
 var cancelHostCallback;
 var getFrameDeadline;
 
-if (typeof window !== 'undefined' && window._schedMock) {
+if (typeof window !== 'undefined' && window._schedMock) { //非浏览器环境
   // Dynamic injection, only for testing purposes.
   var impl = window._schedMock;
   requestHostCallback = impl[0];
@@ -515,8 +515,8 @@ if (typeof window !== 'undefined' && window._schedMock) {
   getCurrentTime = function() {
     return _currentTime === -1 ? 0 : _currentTime;
   };
-} else {
-  if (typeof console !== 'undefined') {
+} else {  //浏览器环境
+  if (typeof console !== 'undefined') { //API兼容性检测，不支持加载polyfill
     // TODO: Remove fb.me link
     if (typeof localRequestAnimationFrame !== 'function') {
       console.error(
@@ -657,10 +657,10 @@ if (typeof window !== 'undefined' && window._schedMock) {
   requestHostCallback = function(callback, absoluteTimeout) {
     scheduledHostCallback = callback;
     timeoutTime = absoluteTimeout;
-    if (isFlushingHostCallback || absoluteTimeout < 0) {
+    if (isFlushingHostCallback || absoluteTimeout < 0) { //已经超时了不需要等待立马执行
       // Don't wait for the next frame. Continue working ASAP, in a new event.
       window.postMessage(messageKey, '*');
-    } else if (!isAnimationFrameScheduled) {
+    } else if (!isAnimationFrameScheduled) {  //进入正常调度流程
       // If rAF didn't already schedule one, we need to schedule a frame.
       // TODO: If this rAF doesn't materialize because the browser throttles, we
       // might want to still have setTimeout trigger rIC as a backup to ensure
