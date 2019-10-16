@@ -2362,11 +2362,11 @@ function shouldYield() {
   }
   if (
     deadline === null ||
-    deadline.timeRemaining() > timeHeuristicForUnitOfWork
+    deadline.timeRemaining() > timeHeuristicForUnitOfWork  //timeHeuristicForUnitOfWork常量1,判断是否过期
   ) {
     // Disregard deadline.didTimeout. Only expired work should be flushed
     // during a timeout. This path is only hit for non-expired work.
-    return false;
+    return false;  //>1说明还剩时间执行react的动画更新
   }
   deadlineDidExpire = true;
   return true;
