@@ -323,11 +323,11 @@ export function resolveLazyComponentTag(Component: Function): WorkTag {
 }
 
 // This is used to create an alternate fiber to do work on.
-export function createWorkInProgress(
+export function createWorkInProgress( 
   current: Fiber,
   pendingProps: any,
   expirationTime: ExpirationTime,
-): Fiber {
+): Fiber { //不能直接操作当前的fiber对象，而是拷贝/创建出一个来对这个进行操作
   let workInProgress = current.alternate;
   if (workInProgress === null) {
     // We use a double buffering pooling technique because we know that we'll

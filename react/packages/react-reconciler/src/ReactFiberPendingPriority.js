@@ -247,7 +247,7 @@ export function didExpireAtExpirationTime(
   currentTime: ExpirationTime,
 ): void {
   const expirationTime = root.expirationTime;
-  if (expirationTime !== NoWork && currentTime >= expirationTime) {
+  if (expirationTime !== NoWork && currentTime >= expirationTime) { //已经过期超时
     // The root has expired. Flush all work up to the current time.
     root.nextExpirationTimeToWorkOn = currentTime;
   }
