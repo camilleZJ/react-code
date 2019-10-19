@@ -1469,19 +1469,19 @@ function bailoutOnAlreadyFinishedWork(
   }
 
   // Check if the children have any pending work.
-  const childExpirationTime = workInProgress.childExpirationTime;
+  const childExpirationTime = workInProgress.childExpirationTime; //childExpirationTime优先级最高的子树中的节点
   if (
     childExpirationTime === NoWork ||
-    childExpirationTime > renderExpirationTime
+    childExpirationTime > renderExpirationTime  //子树种也没有节点需要在本次渲染中完成的--跳过了子树的更新--非常大的优化点childExpirationTime很重要react16.5后才出现的
   ) {
     // The children don't have any work either. We can skip them.
     // TODO: Once we add back resuming, we should check if the children are
     // a work-in-progress set. If so, we need to transfer their effects.
     return null;
-  } else {
+  } else {  //子树上面有更新要执行
     // This fiber doesn't have work, but its subtree does. Clone the child
     // fibers and continue.
-    cloneChildFibers(current, workInProgress);
+    cloneChildFibers(current, workInProgress); //当前节点没有更新要执行，说明他的子节点也没有更新要执行，此时只需把老的chilren拷贝过来即可
     return workInProgress.child;
   }
 }
@@ -1489,19 +1489,20 @@ function bailoutOnAlreadyFinishedWork(
 function beginWork(
   current: Fiber | null,
   workInProgress: Fiber,
-  renderExpirationTime: ExpirationTime,
+  renderExpirationTime: ExpirationTime,  //这次渲染的时候优先级最高
 ): Fiber | null {
   const updateExpirationTime = workInProgress.expirationTime;
 
-  if (current !== null) {
+  //RootFiber产生的更新-》更新的过期时间，只能是ReactDOM.render产生的，页面渲染后产生的更新是基于组件的，最高层也就是App产生的更新，所以只有ReactDOM.render时RootFiber.expirationTime才是有值的
+  if (current !== null) { //所以此判断主要是看是不是首次渲染:ReactDOM.render
     const oldProps = current.memoizedProps;
     const newProps = workInProgress.pendingProps;
     if (
-      oldProps === newProps &&
-      !hasLegacyContextChanged() &&
-      (updateExpirationTime === NoWork ||
-        updateExpirationTime > renderExpirationTime)
-    ) {
+      oldProps === newProps &&  //更新先后属性没变
+      !hasLegacyContextChanged() && //老的Context相关，很浪费性能
+      (updateExpirationTime === NoWork ||  //没有更新任务
+        updateExpirationTime > renderExpirationTime) //更新的优先级不是最高
+    ) { //优化点：以上条件可以跳出本次更新
       // This fiber does not have any pending work. Bailout without entering
       // the begin phase. There's still some bookkeeping we that needs to be done
       // in this optimized path, mostly pushing stuff onto the stack.
@@ -1578,7 +1579,7 @@ function beginWork(
           break;
         }
       }
-      return bailoutOnAlreadyFinishedWork(
+      return bailoutOnAlreadyFinishedWork(  //该方法会跳过本次节点以及其所有子节点的更新
         current,
         workInProgress,
         renderExpirationTime,
