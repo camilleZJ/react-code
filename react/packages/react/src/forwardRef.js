@@ -40,7 +40,7 @@ export default function forwardRef<Props, ElementType: React$ElementType>(
   }
 
   return {
-    $$typeof: REACT_FORWARD_REF_TYPE,
-    render,
+    $$typeof: REACT_FORWARD_REF_TYPE,  //实际上就是多加了一个$$typeof
+    render, //传入的render被和$$typeof一起封装到了{}中
   };
 }

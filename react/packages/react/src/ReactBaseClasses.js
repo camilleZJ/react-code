@@ -63,7 +63,7 @@ Component.prototype.setState = function(partialState, callback) {   //setState�
     'setState(...): takes an object of state variables to update or a ' +
       'function which returns an object of state variables.',
   );
-  this.updater.enqueueSetState(this, partialState, callback, 'setState');  //调用Component函数中的updater中的enqueueSetState方法，不同平台如dom、native实现不同，所以具体实现在reactdom中
+  this.updater.enqueueSetState(this, partialState, callback, 'setState');  //每个Component都有一个updater徐对象，调用组件的setState实际上就是调用Component上的updater对象中的enqueueSetState方法，不同平台如dom、native实现不同，所以具体实现在reactdom中
 };
 
 /**
@@ -81,7 +81,7 @@ Component.prototype.setState = function(partialState, callback) {   //setState�
  * @protected
  */
 Component.prototype.forceUpdate = function(callback) {
-  this.updater.enqueueForceUpdate(this, callback, 'forceUpdate');
+  this.updater.enqueueForceUpdate(this, callback, 'forceUpdate');  //forceUpdate也是调用Component-》updater对象中的enqueueForceUpdate
 };
 
 /**

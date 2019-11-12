@@ -16,7 +16,7 @@ import warning from 'shared/warning';
 
 export function createContext<T>(
   defaultValue: T,
-  calculateChangedBits: ?(a: T, b: T) => number,
+  calculateChangedBits: ?(a: T, b: T) => number,  //计算新老API的变化的
 ): ReactContext<T> {
   if (calculateChangedBits === undefined) {
     calculateChangedBits = null;
