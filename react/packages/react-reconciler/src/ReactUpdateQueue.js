@@ -208,8 +208,8 @@ function appendUpdateToQueue<State>(
     // Queue is empty
     queue.firstUpdate = queue.lastUpdate = update;
   } else {
-    queue.lastUpdate.next = update;
-    queue.lastUpdate = update;
+    queue.lastUpdate.next = update;  //将update插入到queue链表最后
+    queue.lastUpdate = update;  //将指针指向queue中最新的lastUpdate
   }
 }
 

@@ -357,8 +357,8 @@ function resetStack() {
   if (nextUnitOfWork !== null) {  //nextUnitOfWork !== null代表异步任务之前被打断了存在nextUnitOfWork中，没有新来任务打断，浏览器空余时候会来执行这个任务
     let interruptedWork = nextUnitOfWork.return;  //被打断的任务
     while (interruptedWork !== null) {
-      unwindInterruptedWork(interruptedWork); //优先级高的任务已经执行了，为了防止Stack错乱，需要回退
-      interruptedWork = interruptedWork.return; //回退之后重新开始优先级任务的更新
+      unwindInterruptedWork(interruptedWork); //优先级高的任务已经执行了，也就是部分子树的更新已经完成，state已经改变，为了防止state错乱，需要回退到之前，再从头开始更新，回退之后重新开始优先级任务的更新
+      interruptedWork = interruptedWork.return;  //通过return往上逐层遍历
     }
   }
 
@@ -1738,7 +1738,7 @@ function scheduleWork(fiber: Fiber, expirationTime: ExpirationTime) {
   if (
     !isWorking &&
     nextRenderExpirationTime !== NoWork &&
-    expirationTime < nextRenderExpirationTime
+    expirationTime < nextRenderExpirationTime  //当前更新比下一个即将更新的任务优先级高就可以先执行当前这个优先级高的
   ) {
     // This is an interruption. (Used for performance tracking.)
     interruptedBy = fiber; //记录: 被哪个任务打断
@@ -1747,6 +1747,7 @@ function scheduleWork(fiber: Fiber, expirationTime: ExpirationTime) {
   markPendingPriorityLevel(root, expirationTime);
   //isWorking包含isCommitting阶段，isCommitting阶段不能不被打断：fiber树整体渲染之后(update完成)更新到DOM上
   //单个应用来说nextRoot 永远等于 root，一般不考虑不等
+  //isCommitting在commitRoot初始设为true，执行完中间代码设为false，所以只有进入commitRoot阶段才有true的时候
   if (
     // If we're in the render phase, we don't need to schedule this root
     // for an update, because we'll do it before we exit...

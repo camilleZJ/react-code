@@ -128,7 +128,7 @@ function traverseAllChildrenImpl(
     }
   }
 
-  if (invokeCallback) {
+  if (invokeCallback) { //以上invokeCallback = true的条件都是传入的children是单个节点或null
     callback(
       traverseContext,
       children,
@@ -145,11 +145,11 @@ function traverseAllChildrenImpl(
   const nextNamePrefix =
     nameSoFar === '' ? SEPARATOR : nameSoFar + SUBSEPARATOR;
 
-  if (Array.isArray(children)) {
-    for (let i = 0; i < children.length; i++) {
+  if (Array.isArray(children)) {  
+    for (let i = 0; i < children.length; i++) {  //多个节点需要遍历
       child = children[i];
       nextName = nextNamePrefix + getComponentKey(child, i);
-      subtreeCount += traverseAllChildrenImpl(
+      subtreeCount += traverseAllChildrenImpl(  //遍历的单个child还是调用自身，即单个节点按照上面的直接调用传入的callback
         child,
         nextName,
         callback,
@@ -289,11 +289,11 @@ function mapSingleChildIntoContext(bookKeeping, child, childKey) {
   const {result, keyPrefix, func, context} = bookKeeping;
 
   let mappedChild = func.call(context, child, bookKeeping.count++);
-  if (Array.isArray(mappedChild)) {
+  if (Array.isArray(mappedChild)) {  //对于单个节点的回调处理成了数组如map(props.data, c=> [c, [c,c]])，对于单个c的第二次遍历就返回了数组[c,c],对于这个返回的数组需要从头开始处理
     mapIntoWithKeyPrefixInternal(mappedChild, result, childKey, c => c);
   } else if (mappedChild != null) {
     if (isValidElement(mappedChild)) {
-      mappedChild = cloneAndReplaceKey(
+      mappedChild = cloneAndReplaceKey(  //clone一个新的reactElement，其中type、self、source、owner、props、ref都不变，只是其中很高的key重新获取的
         mappedChild,
         // Keep both the (mapped) and old keys if they differ, just as
         // traverseAllChildren used to do for objects as children
@@ -304,7 +304,7 @@ function mapSingleChildIntoContext(bookKeeping, child, childKey) {
           childKey,
       );
     }
-    result.push(mappedChild);
+    result.push(mappedChild); //将新的element  push的result中
   }
 }
 
