@@ -2029,7 +2029,7 @@ function addRootToSchedule(root: FiberRoot, expirationTime: ExpirationTime) {
       expirationTime < remainingExpirationTime
     ) {
       // Update the priority.
-      root.expirationTime = expirationTime;  //更新root优先级
+      root.expirationTime = expirationTime;  //更新root优先级：把root的更新时间替换为所有更新中优先级最高的，防止过期时间不到任务一直被推迟，这样达到过期时间会立马执行这个更新
     }
   }
 }

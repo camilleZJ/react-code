@@ -310,7 +310,7 @@ function unstable_scheduleCallback(callback, deprecated_options) { //deprecated_
     typeof deprecated_options.timeout === 'number'
   ) {
     // FIXME: Remove this branch once we lift expiration times out of React.
-    expirationTime = startTime + deprecated_options.timeout;  //进入此判断，注意上面的注释提示：把expiration times葱react中单拿出的时候这个if判断就去掉，都是走下面的
+    expirationTime = startTime + deprecated_options.timeout;  //进入此判断，注意上面的注释提示：把expiration times从react中单拿出的时候这个if判断就去掉，都是走下面的
   } else {
     switch (currentPriorityLevel) {
       case ImmediatePriority:
@@ -365,10 +365,15 @@ function unstable_scheduleCallback(callback, deprecated_options) { //deprecated_
       ensureHostCallbackIsScheduled();
     }
 
+    //newNode优先级最低-》插入到链表最后：next = firstCallbackNode;  previous = next.previous-原链表的最后一项 previous.next=newNode将newNode插入到链表最后，重新修改next.previous指向最新的最后一项newNode
+    //newNode优先级最高-》插入到链表最前：next === firstCallbackNode(链表最开始的第一项)；previous = next.previous-链表的最后一项，previous.next构成循环链表指向最新的第一项newNode，next.previous之前的第一项变成了第二项，他的previous就是指向了前一个也就是新的第一项newNode
+    //newNode插入到链表中间部分及next的前面，next.previous：未插入newNode时next的前一项，newNode就是插入到next.previous和next之间
     var previous = next.previous;
-    previous.next = next.previous = newNode;
+    previous.next = next.previous = newNode; 
     newNode.next = next;
-    newNode.previous = previous;
+    newNode.previous = previous; 
+    //newNode插入到链表最后：newNode.next还是链表的第一项，newNode.previous指向链表之前的最后一项，也就是新链表倒数第二项即newNode的前一项
+    //newNode插入到链表最前：newNode.next指向最开始的第一项，newNode.previous指向链表中的最后一项
   }
 
   return newNode;
@@ -633,7 +638,7 @@ if (typeof window !== 'undefined' && window._schedMock) { //非浏览器环境
       nextFrameTime < activeFrameTime &&
       previousFrameTime < activeFrameTime
     ) {  //rafTime - frameDeadline是小于或等于0的,会进入nextFrameTime < activeFrameTime,
-      if (nextFrameTime < 8) {  //8ms-120帧，浏览器不支持小于平均8ms一帧的，即不支持每秒大于120帧，最高是每秒20帧
+      if (nextFrameTime < 8) {  //8ms-120帧，浏览器不支持小于平均8ms一帧的，即不支持每秒大于120帧，最高是每秒120帧
         // Defensive coding. We don't support higher frame rates than 120hz.
         // If the calculated frame time gets lower than 8, it is probably a bug.
         nextFrameTime = 8;
@@ -652,7 +657,7 @@ if (typeof window !== 'undefined' && window._schedMock) { //非浏览器环境
     }
     frameDeadline = rafTime + activeFrameTime; //问题说明：此处activeFrameTime-33ms是一帧动画的时间，那么依据讲解一帧动画时间包括react+浏览器，此处使用33是不是把浏览器时间都占了，没给浏览器留下处理时间？
     //解释上面的问题：react是把这些帧的处理放到队列中的，requestAnimationFrameWithTimeout把回调加入，这个方法执行完立马进入浏览器动画刷新的流程
-    //是以上动画和浏览器都执行完成后才执行window.postMessage，即window.postMessage使等浏览器刷新完成后才接收到的，此时浏览器刷新的时间已经过了
+    //是以上动画和浏览器都执行完成后才执行window.postMessage，即window.postMessage是等浏览器刷新完成后才接收到的，此时浏览器刷新的时间已经过了
     //所以rafTime + activeFrameTime是已经包含了浏览器刷新动画的时间，剩下来的是react执行动画的时间，这就是react模拟window的window.requestIdleCallback() API
     if (!isMessageEventScheduled) {
       isMessageEventScheduled = true;
