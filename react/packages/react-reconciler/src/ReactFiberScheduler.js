@@ -2113,7 +2113,7 @@ function performAsyncWork(dl) {
       recomputeCurrentRendererTime(); //polyfill相关的
       let root: FiberRoot = firstScheduledRoot;
       do {
-        didExpireAtExpirationTime(root, currentRendererTime); //修改过期任务的FiberRoot上的属性
+        didExpireAtExpirationTime(root, currentRendererTime); //修改过期任务的FiberRoot上的属性：若root.expirationTime<=currentRendererTime, root.nextExpirationTimeToWorkOn=currentRendererTime
         // The root schedule is circular, so this is never null.
         root = (root.nextScheduledRoot: any);
       } while (root !== firstScheduledRoot);
@@ -2133,7 +2133,7 @@ function performWork( minExpirationTime: ExpirationTime, dl: Deadline | null) {
   // the deadline.
   findHighestPriorityRoot();
 
-  if (deadline !== null) {
+  if (deadline !== null) {  //performWork(NoWork, dl)
     recomputeCurrentRendererTime();
     currentSchedulerTime = currentRendererTime;
 
@@ -2148,7 +2148,7 @@ function performWork( minExpirationTime: ExpirationTime, dl: Deadline | null) {
       nextFlushedRoot !== null &&
       nextFlushedExpirationTime !== NoWork &&
       (minExpirationTime === NoWork ||
-        minExpirationTime >= nextFlushedExpirationTime) &&
+        minExpirationTime >= nextFlushedExpirationTime) && //和无deadline一样同步任务
       (!deadlineDidExpire || currentRendererTime >= nextFlushedExpirationTime)
     ) { //!deadlineDidExpire-时间片还有剩余时间  currentRendererTime >= nextFlushedExpirationTime：任务已经超时
       performWorkOnRoot(
@@ -2164,8 +2164,8 @@ function performWork( minExpirationTime: ExpirationTime, dl: Deadline | null) {
     while (
       nextFlushedRoot !== null &&
       nextFlushedExpirationTime !== NoWork &&
-      (minExpirationTime === NoWork ||
-        minExpirationTime >= nextFlushedExpirationTime) //同步任务minExpirationTime=Sync  nextFlushedExpirationTime=Sync/NoWork，Sync=1，NoWork=0
+      (minExpirationTime === NoWork || 
+        minExpirationTime >= nextFlushedExpirationTime) //同步任务minExpirationTime=Sync  nextFlushedExpirationTime=Sync/NoWork，Sync=1，NoWork=0,而nextFlushedExpirationTime !== NoWork所以只能是Sync
     ) {  //只有同步任务会进来
       performWorkOnRoot(nextFlushedRoot, nextFlushedExpirationTime, true);
       findHighestPriorityRoot(); //处理完了nextFlushedRoot再去找一个优先级最高的root赋值给nextFlushedRoot
@@ -2253,7 +2253,7 @@ function performWorkOnRoot(
   isRendering = true;
 
   // Check if this is async work or sync/expired work.
-  if (deadline === null || isExpired) { //Sync或者是超时的任务
+  if (deadline === null || isExpired) { //deadline === null=》Sync、isExpired=》Sync或者是超时的任务
     // Flush work without yielding.
     // TODO: Non-yieldy work does not necessarily imply expired work. A renderer
     // may want to perform some work without yielding, but also without
@@ -2281,7 +2281,7 @@ function performWorkOnRoot(
         completeRoot(root, finishedWork, expirationTime);
       }
     }
-  } else {
+  } else {  //异步没超时的任务
     // Flush async work.
     let finishedWork = root.finishedWork; 
     if (finishedWork !== null) {

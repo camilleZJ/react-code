@@ -236,7 +236,7 @@ function flushWork(didTimeout) { //开始真正执行callback
           flushFirstCallback();
         } while (
           firstCallbackNode !== null &&
-          getFrameDeadline() - getCurrentTime() > 0 //还有剩余时间，这一帧还每执行完有多余时间情况下才执行上面的flushFirstCallback
+          getFrameDeadline() - getCurrentTime() > 0 //还有剩余时间，这一帧时间还没执行完有多余时间情况下才执行上面的flushFirstCallback
         );
       }
     }
@@ -596,7 +596,7 @@ if (typeof window !== 'undefined' && window._schedMock) { //非浏览器环境
           requestAnimationFrameWithTimeout(animationTick);
         }
         // Exit without invoking the callback.
-        scheduledHostCallback = prevScheduledCallback;
+        scheduledHostCallback = prevScheduledCallback; //占用下一帧的时间
         timeoutTime = prevTimeoutTime;
         return;
       }
@@ -613,7 +613,7 @@ if (typeof window !== 'undefined' && window._schedMock) { //非浏览器环境
   };
   // Assumes that we have addEventListener in this environment. Might need
   // something better for old IE.
-  window.addEventListener('message', idleTick, false);
+  window.addEventListener('message', idleTick, false);  //postMessage后接收方接收，此时浏览器的刷新已经完成，也就是一帧内浏览器时间用掉了，剩下的是react的执行时间
 
   var animationTick = function(rafTime) {
     if (scheduledHostCallback !== null) {
@@ -658,10 +658,10 @@ if (typeof window !== 'undefined' && window._schedMock) { //非浏览器环境
     frameDeadline = rafTime + activeFrameTime; //问题说明：此处activeFrameTime-33ms是一帧动画的时间，那么依据讲解一帧动画时间包括react+浏览器，此处使用33是不是把浏览器时间都占了，没给浏览器留下处理时间？
     //解释上面的问题：react是把这些帧的处理放到队列中的，requestAnimationFrameWithTimeout把回调加入，这个方法执行完立马进入浏览器动画刷新的流程
     //是以上动画和浏览器都执行完成后才执行window.postMessage，即window.postMessage是等浏览器刷新完成后才接收到的，此时浏览器刷新的时间已经过了
-    //所以rafTime + activeFrameTime是已经包含了浏览器刷新动画的时间，剩下来的是react执行动画的时间，这就是react模拟window的window.requestIdleCallback() API
+    //所以rafTime + activeFrameTime是已经包含了浏览器刷新动画的时间，剩下来的是react执行动画的时间，这就是react模拟window.requestIdleCallback() API
     if (!isMessageEventScheduled) {
       isMessageEventScheduled = true;
-      window.postMessage(messageKey, '*'); 
+      window.postMessage(messageKey, '*');  //任务队列，等到浏览器用户输入、动画等执行完成后才能postMessage，也就是等到浏览器刷新完成后接收方才能收到，所以以上的frameDeadline已经包含了浏览器用掉的一部分时间
     }
   };
 
