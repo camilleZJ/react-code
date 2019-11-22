@@ -1487,11 +1487,11 @@ function bailoutOnAlreadyFinishedWork(
 }
 
 function beginWork(
-  current: Fiber | null,
+  current: Fiber | null,  //workInProgress.current
   workInProgress: Fiber,
-  renderExpirationTime: ExpirationTime,  //这次渲染的时候优先级最高
+  renderExpirationTime: ExpirationTime,  //这次渲染的时候优先级最高：root.nextExpirationTimeToWorkOn
 ): Fiber | null {
-  const updateExpirationTime = workInProgress.expirationTime;
+  const updateExpirationTime = workInProgress.expirationTime; //注意：fiber.expirationTime只有ReactDOM.render时才有值，setState的更新最高也就是App不会是Fiber
 
   //RootFiber产生的更新-》更新的过期时间，只能是ReactDOM.render产生的，页面渲染后产生的更新是基于组件的，最高层也就是App产生的更新，所以只有ReactDOM.render时RootFiber.expirationTime才是有值的
   if (current !== null) { //所以此判断主要是看是不是首次渲染:ReactDOM.render

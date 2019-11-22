@@ -1081,16 +1081,16 @@ function performUnitOfWork(workInProgress: Fiber): Fiber | null {
       startProfilerTimer(workInProgress);
     }
 
-    next = beginWork(current, workInProgress, nextRenderExpirationTime); //对每个节点的更新，返回下一个要更新的节点
-    workInProgress.memoizedProps = workInProgress.pendingProps; //该节点已经更新完，正在处理的props就变成了旧的props
+    next = beginWork(current, workInProgress, nextRenderExpirationTime); 
+    workInProgress.memoizedProps = workInProgress.pendingProps; 
 
     if (workInProgress.mode & ProfileMode) {
       // Record the render duration assuming we didn't bailout (or error).
       stopProfilerTimerIfRunningAndRecordDelta(workInProgress, true);
     }
   } else {
-    next = beginWork(current, workInProgress, nextRenderExpirationTime);
-    workInProgress.memoizedProps = workInProgress.pendingProps;
+    next = beginWork(current, workInProgress, nextRenderExpirationTime);  //对每个节点的更新，返回下一个要更新的节点
+    workInProgress.memoizedProps = workInProgress.pendingProps;  //该节点已经更新完，正在处理的props就变成了旧的props
   }
 
   if (__DEV__) {
@@ -1148,22 +1148,22 @@ function renderRoot(
 
   // Check if we're starting from a fresh stack, or if we're resuming from
   // previously yielded work.
-  if (
+  if ( //scheduleWork中会判断新来的更新的优先级是否更高，更高的话resetStack()并且初始化nextRoot、nextRenderExpirationTime、nextUnitOfWork
     expirationTime !== nextRenderExpirationTime ||
     root !== nextRoot ||
     nextUnitOfWork === null
-  ) { //异步任务被高优先级的任务打断
+  ) { //异步任务被高优先级的任务打断: root上的和记录的不一样说明异步任务被打断过
     // Reset the stack and start working from the root.
     resetStack();
     nextRoot = root;
     nextRenderExpirationTime = expirationTime;
-    nextUnitOfWork = createWorkInProgress(  //WorkInProgress转换关系：nextUnitOfWork和current，拷贝出另一个fiber，来对其进行操作
+    nextUnitOfWork = createWorkInProgress(  //WorkInProgress转换关系：(nextRoot)RootFiber.current=nextUnitOfWork(RootFiber)，拷贝出另一个fiber，来对其进行操作
       nextRoot.current,
       null,
       nextRenderExpirationTime,
     );
     root.pendingCommitExpirationTime = NoWork;
-    //以上是跟新xinroot做一些初始化工作
+    //以上是跟新root做一些初始化工作
 
     if (enableSchedulerTracing) {
       // Determine which interactions this batch of work currently includes,
