@@ -421,11 +421,11 @@ export function createFiberFromTypeAndProps(
 ): Fiber {
   let fiber;
 
-  let fiberTag = IndeterminateComponent;
+  let fiberTag = IndeterminateComponent; //未指定，没找到就使用这个tag类型
   // The resolved type is set if we know what the final type will be. I.e. it's not lazy.
   let resolvedType = type;
-  if (typeof type === 'function') {
-    if (shouldConstruct(type)) {
+  if (typeof type === 'function') {  //函数组件和类组件都是function
+    if (shouldConstruct(type)) { //判断是否有Construct：及Component-type的prototype.isReactComponent是否存在，从而确定是不是类组件
       fiberTag = ClassComponent;
     }
   } else if (typeof type === 'string') {
@@ -458,7 +458,7 @@ export function createFiberFromTypeAndProps(
       case REACT_SUSPENSE_TYPE:
         return createFiberFromSuspense(pendingProps, mode, expirationTime, key);
       default: {
-        if (typeof type === 'object' && type !== null) {
+        if (typeof type === 'object' && type !== null) { //react.memo、react.createRef等通过react API创建的
           switch (type.$$typeof) {
             case REACT_PROVIDER_TYPE:
               fiberTag = ContextProvider;
@@ -526,7 +526,7 @@ export function createFiberFromElement(
   if (__DEV__) {
     owner = element._owner;
   }
-  const type = element.type;
+  const type = element.type;  //react。createElement(type, config, children)中的type
   const key = element.key;
   const pendingProps = element.props;
   const fiber = createFiberFromTypeAndProps(

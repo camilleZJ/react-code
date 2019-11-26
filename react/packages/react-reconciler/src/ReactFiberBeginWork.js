@@ -136,7 +136,7 @@ export function reconcileChildren(
     // won't update its child set by applying minimal side-effects. Instead,
     // we will add them all to the child before it gets rendered. That means
     // we can optimize this reconciliation pass by not tracking side-effects.
-    workInProgress.child = mountChildFibers(
+    workInProgress.child = mountChildFibers( //第一次渲染，先渲染父节点后渲染子节点，所以第二个参数null
       workInProgress,
       null,
       nextChildren,
@@ -412,7 +412,7 @@ function updateFunctionComponent(
     nextChildren = Component(nextProps, context);
     ReactCurrentFiber.setCurrentPhase(null);
   } else {
-    nextChildren = Component(nextProps, context);
+    nextChildren = Component(nextProps, context);  //获取Componentreturn的内容，注意中参数除了props还有context
   }
 
   // React DevTools reads this flag.
@@ -423,7 +423,7 @@ function updateFunctionComponent(
     nextChildren,
     renderExpirationTime,
   );
-  return workInProgress.child;
+  return workInProgress.child;  //beginWork返回的是workInProgress.child
 }
 
 function updateClassComponent(
@@ -445,10 +445,10 @@ function updateClassComponent(
   }
   prepareToReadContext(workInProgress, renderExpirationTime);
 
-  const instance = workInProgress.stateNode;
+  const instance = workInProgress.stateNode;  //workInProgress.stateNode = instance
   let shouldUpdate;
-  if (instance === null) {
-    if (current !== null) {
+  if (instance === null) { //instance：new Class产生的（instance = new Component(props, context)），第一次ReactDOM.render时，还没有更新过此时instance=null
+    if (current !== null) {  //current=null是第一次渲染，instance === null&&current !== null说明是Suspense，第一次渲染只是抛出了promise还没有真正渲染出子节点
       // An class component without an instance only mounts if it suspended
       // inside a non- concurrent tree, in an inconsistent state. We want to
       // tree it like a new mount, even though an empty version of it already
@@ -459,7 +459,7 @@ function updateClassComponent(
       workInProgress.effectTag |= Placement;
     }
     // In the initial pass we might need to construct the instance.
-    constructClassInstance(
+    constructClassInstance(  //创建instance
       workInProgress,
       Component,
       nextProps,
@@ -472,16 +472,16 @@ function updateClassComponent(
       renderExpirationTime,
     );
     shouldUpdate = true;
-  } else if (current === null) {
+  } else if (current === null) { //current=null是第一次渲染&&instance !== null:中断的，如ClassComponent。render方法时报错，但instance已经成功创建
     // In a resume, we'll already have an instance we can reuse.
-    shouldUpdate = resumeMountClassInstance(
+    shouldUpdate = resumeMountClassInstance( 
       workInProgress,
       Component,
       nextProps,
       renderExpirationTime,
     );
   } else {
-    shouldUpdate = updateClassInstance(
+    shouldUpdate = updateClassInstance( //current、instance都存在说明已经一次渲染了
       current,
       workInProgress,
       Component,
@@ -493,7 +493,7 @@ function updateClassComponent(
     current,
     workInProgress,
     Component,
-    shouldUpdate,
+    shouldUpdate, //以上操作主要获取shouldUpdate：是否需要更新
     hasContext,
     renderExpirationTime,
   );
@@ -1487,11 +1487,11 @@ function bailoutOnAlreadyFinishedWork(
 }
 
 function beginWork(
-  current: Fiber | null,  //workInProgress.current
+  current: Fiber | null,  //workInProgress.alternate
   workInProgress: Fiber,
   renderExpirationTime: ExpirationTime,  //这次渲染的时候优先级最高：root.nextExpirationTimeToWorkOn
 ): Fiber | null {
-  const updateExpirationTime = workInProgress.expirationTime; //注意：fiber.expirationTime只有ReactDOM.render时才有值，setState的更新最高也就是App不会是Fiber
+  const updateExpirationTime = workInProgress.expirationTime; //注意：fiber.expirationTime只有ReactDOM.render时才有值，setState的更新最高也就是App不会是Fiber，这个时候看childExpirationTime 
 
   //RootFiber产生的更新-》更新的过期时间，只能是ReactDOM.render产生的，页面渲染后产生的更新是基于组件的，最高层也就是App产生的更新，所以只有ReactDOM.render时RootFiber.expirationTime才是有值的
   if (current !== null) { //所以此判断主要是看是不是首次渲染:ReactDOM.render
@@ -1611,12 +1611,12 @@ function beginWork(
       );
     }
     case FunctionComponent: {
-      const Component = workInProgress.type;
-      const unresolvedProps = workInProgress.pendingProps;
+      const Component = workInProgress.type;  //reactElement中type，也就是react.createElement(type, config, children) DOM原生的是字符串、否则是组件：函数组件-方法、类组件-类
+      const unresolvedProps = workInProgress.pendingProps;  //新渲染中产生的新属性
       const resolvedProps =
         workInProgress.elementType === Component
           ? unresolvedProps
-          : resolveDefaultProps(Component, unresolvedProps);
+          : resolveDefaultProps(Component, unresolvedProps); //Suspend组件相关，异步的promise，非Suspend：resolvedProps=unresolvedProps=workInProgress.pendingProps=
       return updateFunctionComponent(
         current,
         workInProgress,

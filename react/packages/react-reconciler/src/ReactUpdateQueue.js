@@ -328,7 +328,7 @@ function ensureWorkInProgressQueueIsAClone<State>(
     // If the work-in-progress queue is equal to the current queue,
     // we need to clone it first.
     if (queue === current.updateQueue) {
-      queue = workInProgress.updateQueue = cloneUpdateQueue(queue);
+      queue = workInProgress.updateQueue = cloneUpdateQueue(queue); //保证workInProgress的updateQueue是clone的
     }
   }
   return queue;
@@ -366,7 +366,7 @@ function getStateFromUpdate<State>(
         (workInProgress.effectTag & ~ShouldCapture) | DidCapture;
     }
     // Intentional fallthrough
-    case UpdateState: {
+    case UpdateState: {  //setState
       const payload = update.payload;
       let partialState;
       if (typeof payload === 'function') {
@@ -381,16 +381,16 @@ function getStateFromUpdate<State>(
           }
         }
         partialState = payload.call(instance, prevState, nextProps);
-      } else {
+      } else { //typeof payload = object
         // Partial state object
-        partialState = payload;
+        partialState = payload; 
       }
       if (partialState === null || partialState === undefined) {
         // Null and undefined are treated as no-ops.
         return prevState;
       }
       // Merge the partial state and the previous state.
-      return Object.assign({}, prevState, partialState);
+      return Object.assign({}, prevState, partialState);  //保证没有变化的state保存下来
     }
     case ForceUpdate: {
       hasForceUpdate = true;
@@ -423,9 +423,9 @@ export function processUpdateQueue<State>(
   // Iterate through the list of updates to compute the result.
   let update = queue.firstUpdate;
   let resultState = newBaseState;
-  while (update !== null) {
+  while (update !== null) { //遍历处理updateQueue中的update
     const updateExpirationTime = update.expirationTime;
-    if (updateExpirationTime > renderExpirationTime) {
+    if (updateExpirationTime > renderExpirationTime) {  //该update优先级不最高
       // This update does not have sufficient priority. Skip it.
       if (newFirstUpdate === null) {
         // This is the first skipped update. It will be the first update in
@@ -441,12 +441,12 @@ export function processUpdateQueue<State>(
         newExpirationTime === NoWork ||
         newExpirationTime > updateExpirationTime
       ) {
-        newExpirationTime = updateExpirationTime;
+        newExpirationTime = updateExpirationTime;  //寻找优先级最高的赋值给newExpirationTime
       }
     } else {
       // This update does have sufficient priority. Process it and compute
       // a new result.
-      resultState = getStateFromUpdate(
+      resultState = getStateFromUpdate(  //根据update更计算出新的state
         workInProgress,
         queue,
         update,
@@ -459,6 +459,7 @@ export function processUpdateQueue<State>(
         workInProgress.effectTag |= Callback;
         // Set this to null, in case it was mutated during an aborted render.
         update.nextEffect = null;
+        //把update加入queue.的effect链表
         if (queue.lastEffect === null) {
           queue.firstEffect = queue.lastEffect = update;
         } else {
@@ -523,7 +524,7 @@ export function processUpdateQueue<State>(
     update = update.next;
   }
 
-  if (newFirstUpdate === null) {
+  if (newFirstUpdate === null) { //所有update都是优先级较高的，即都处理完了
     queue.lastUpdate = null;
   }
   if (newFirstCapturedUpdate === null) {
@@ -537,6 +538,7 @@ export function processUpdateQueue<State>(
     newBaseState = resultState;
   }
 
+  //处理完了部分或全部update，修改queue中的update的指针
   queue.baseState = newBaseState;
   queue.firstUpdate = newFirstUpdate;
   queue.firstCapturedUpdate = newFirstCapturedUpdate;
@@ -548,8 +550,8 @@ export function processUpdateQueue<State>(
   // dealt with the props. Context in components that specify
   // shouldComponentUpdate is tricky; but we'll have to account for
   // that regardless.
-  workInProgress.expirationTime = newExpirationTime;
-  workInProgress.memoizedState = resultState;
+  workInProgress.expirationTime = newExpirationTime;  //本次更新执行完了，workInProgress.expirationTime指向了剩下的queue中优先级最高的那个update
+  workInProgress.memoizedState = resultState; //resultState：更新后新的state
 
   if (__DEV__) {
     currentlyProcessingQueue = null;

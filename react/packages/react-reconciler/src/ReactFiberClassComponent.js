@@ -186,7 +186,7 @@ export function applyDerivedStateFromProps(
 const classComponentUpdater = { //classComponent初始化的时候会拿到该updater对象
   isMounted,
   enqueueSetState(inst, payload, callback) {
-    const fiber = ReactInstanceMap.get(inst); //inst: this.setState时传进来的this
+    const fiber = ReactInstanceMap.get(inst); //inst: this.setState时传进来的this， ReactInstanceMap.set(instance, workInProgress)
     const currentTime = requestCurrentTime();
     const expirationTime = computeExpirationForFiber(currentTime, fiber);
 
@@ -253,7 +253,7 @@ function checkShouldComponentUpdate(
   const instance = workInProgress.stateNode;
   if (typeof instance.shouldComponentUpdate === 'function') {
     startPhaseTimer(workInProgress, 'shouldComponentUpdate');
-    const shouldUpdate = instance.shouldComponentUpdate(
+    const shouldUpdate = instance.shouldComponentUpdate(  //调用shouldComponentUpdate方法
       newProps,
       newState,
       nextContext,
@@ -272,9 +272,9 @@ function checkShouldComponentUpdate(
     return shouldUpdate;
   }
 
-  if (ctor.prototype && ctor.prototype.isPureReactComponent) {
+  if (ctor.prototype && ctor.prototype.isPureReactComponent) { //isPureReactComponent会进行shallowEqual对比新老props和state
     return (
-      !shallowEqual(oldProps, newProps) || !shallowEqual(oldState, newState)
+      !shallowEqual(oldProps, newProps) || !shallowEqual(oldState, newState) 
     );
   }
 
@@ -496,7 +496,7 @@ function checkClassInstance(workInProgress: Fiber, ctor: any, newProps: any) {
 }
 
 function adoptClassInstance(workInProgress: Fiber, instance: any): void {
-  instance.updater = classComponentUpdater;
+  instance.updater = classComponentUpdater;  //中有enqueueSetState等方法
   workInProgress.stateNode = instance;
   // The instance needs access to the fiber so that it can schedule updates
   ReactInstanceMap.set(instance, workInProgress);
@@ -554,12 +554,12 @@ function constructClassInstance(
     }
   }
 
-  const instance = new ctor(props, context);
+  const instance = new ctor(props, context);  //react包中：Component(props, context, updater)
   const state = (workInProgress.memoizedState =
     instance.state !== null && instance.state !== undefined
       ? instance.state
       : null);
-  adoptClassInstance(workInProgress, instance);
+  adoptClassInstance(workInProgress, instance); //instance.updater = classComponentUpdater;  workInProgress.stateNode = instance;ReactInstanceMap.set(instance, workInProgress)
 
   if (__DEV__) {
     if (typeof ctor.getDerivedStateFromProps === 'function' && state === null) {
@@ -718,7 +718,7 @@ function callComponentWillReceiveProps(
 }
 
 // Invokes the mount life-cycles on a previously never rendered instance.
-function mountClassInstance(
+function mountClassInstance(  //第一次渲染
   workInProgress: Fiber,
   ctor: any,
   newProps: any,
@@ -778,19 +778,19 @@ function mountClassInstance(
 
   let updateQueue = workInProgress.updateQueue;
   if (updateQueue !== null) {
-    processUpdateQueue(
+    processUpdateQueue(  //完成updateQueue中优先级高于renderExpirationTime的update的更新，同时更新workInProgress.memoizedState为更新后的baseState
       workInProgress,
       updateQueue,
       newProps,
       instance,
       renderExpirationTime,
-    );
-    instance.state = workInProgress.memoizedState;
+    ); 
+    instance.state = workInProgress.memoizedState; //processUpdateQueue后获取新的state
   }
 
-  const getDerivedStateFromProps = ctor.getDerivedStateFromProps;
+  const getDerivedStateFromProps = ctor.getDerivedStateFromProps; //react新的生命周期方法
   if (typeof getDerivedStateFromProps === 'function') {
-    applyDerivedStateFromProps(
+    applyDerivedStateFromProps(  //组件更新的过程中被调用
       workInProgress,
       ctor,
       getDerivedStateFromProps,
@@ -806,11 +806,11 @@ function mountClassInstance(
     typeof instance.getSnapshotBeforeUpdate !== 'function' &&
     (typeof instance.UNSAFE_componentWillMount === 'function' ||
       typeof instance.componentWillMount === 'function')
-  ) {
-    callComponentWillMount(workInProgress, instance);
+  ) {  //判断是否有ComponentWillMount生命周期方法调用
+    callComponentWillMount(workInProgress, instance);  //第一次渲染需要调用
     // If we had additional state updates during this life-cycle, let's
     // process them now.
-    updateQueue = workInProgress.updateQueue;
+    updateQueue = workInProgress.updateQueue; //重新调用setState，防止生命周期有额外的setState=》这样就不需要再次触发setState了
     if (updateQueue !== null) {
       processUpdateQueue(
         workInProgress,
@@ -823,7 +823,7 @@ function mountClassInstance(
     }
   }
 
-  if (typeof instance.componentDidMount === 'function') {
+  if (typeof instance.componentDidMount === 'function') { //本次是初次渲染，需要render之后才会componentDidMount，所以此处只是添加update标志
     workInProgress.effectTag |= Update;
   }
 }
@@ -879,8 +879,8 @@ function resumeMountClassInstance(
     }
   }
 
-  resetHasForceUpdateBeforeProcessing();
-
+  resetHasForceUpdateBeforeProcessing();  //hasForceUpdate = false;
+ 
   const oldState = workInProgress.memoizedState;
   let newState = (instance.state = oldState);
   let updateQueue = workInProgress.updateQueue;
@@ -897,15 +897,15 @@ function resumeMountClassInstance(
   if (
     oldProps === newProps &&
     oldState === newState &&
-    !hasContextChanged() &&
-    !checkHasForceUpdateAfterProcessing()
+    !hasContextChanged() &&  
+    !checkHasForceUpdateAfterProcessing()  //hasForceUpdate:true强制更新  
   ) {
     // If an update was already in progress, we should schedule an Update
     // effect even though we're bailing out, so that cWU/cDU are called.
-    if (typeof instance.componentDidMount === 'function') {
+    if (typeof instance.componentDidMount === 'function') {  //current=null还是初次渲染
       workInProgress.effectTag |= Update;
     }
-    return false;
+    return false;  //组件不需要更新
   }
 
   if (typeof getDerivedStateFromProps === 'function') {
@@ -930,7 +930,7 @@ function resumeMountClassInstance(
       nextContext,
     );
 
-  if (shouldUpdate) {
+  if (shouldUpdate) {  //需要更新
     // In order to support react-lifecycles-compat polyfilled components,
     // Unsafe lifecycles should not be invoked for components using the new APIs.
     if (
@@ -1112,7 +1112,7 @@ function updateClassInstance(
   } else {
     // If an update was already in progress, we should schedule an Update
     // effect even though we're bailing out, so that cWU/cDU are called.
-    if (typeof instance.componentDidUpdate === 'function') {
+    if (typeof instance.componentDidUpdate === 'function') {  //和第一次渲染很相似，只是此处调用的生命周期方法是componentDidUpdate
       if (
         oldProps !== current.memoizedProps ||
         oldState !== current.memoizedState
