@@ -472,7 +472,7 @@ function updateClassComponent(
       renderExpirationTime,
     );
     shouldUpdate = true;
-  } else if (current === null) { //current=null是第一次渲染&&instance !== null:中断的，如ClassComponent。render方法时报错，但instance已经成功创建
+  } else if (current === null) { //current=null是第一次渲染&&instance !== null:中断的，如ClassComponent.render方法时报错，但instance已经成功创建
     // In a resume, we'll already have an instance we can reuse.
     shouldUpdate = resumeMountClassInstance( 
       workInProgress,
@@ -493,7 +493,7 @@ function updateClassComponent(
     current,
     workInProgress,
     Component,
-    shouldUpdate, //以上操作主要获取shouldUpdate：是否需要更新
+    shouldUpdate, //以上操作获取shouldUpdate：是否需要更新
     hasContext,
     renderExpirationTime,
   );
@@ -508,9 +508,9 @@ function finishClassComponent(
   renderExpirationTime: ExpirationTime,
 ) {
   // Refs should update even if shouldComponentUpdate returns false
-  markRef(current, workInProgress);
+  markRef(current, workInProgress);  
 
-  const didCaptureError = (workInProgress.effectTag & DidCapture) !== NoEffect;
+  const didCaptureError = (workInProgress.effectTag & DidCapture) !== NoEffect;  //判断workInProgress.effectTag上是否有DidCapture，以上流程有错误就会在effectTag上添加DidCapture
 
   if (!shouldUpdate && !didCaptureError) {
     // Context providers should defer to sCU for rendering
@@ -518,7 +518,7 @@ function finishClassComponent(
       invalidateContextProvider(workInProgress, Component, false);
     }
 
-    return bailoutOnAlreadyFinishedWork(
+    return bailoutOnAlreadyFinishedWork(  //跳过更新
       current,
       workInProgress,
       renderExpirationTime,
@@ -530,16 +530,17 @@ function finishClassComponent(
   // Rerender
   ReactCurrentOwner.current = workInProgress;
   let nextChildren;
+  //getDerivedStateFromError这个没有调用，是因为getDerivedStateFromError实在错误捕获阶段调用的
   if (
     didCaptureError &&
-    typeof Component.getDerivedStateFromError !== 'function'
+    typeof Component.getDerivedStateFromError !== 'function'  //getDerivedStateFromError: react16.6增加的生命周期方法，有错误的时候就可以调用这个方法生成新的state，ComponentDidCatch：是在下一次渲染的时候才会setState，所以instance可能是null，就获取不到ref，执行ref的时候就会报错，而该生命周期方法会直接生成state，即instance是存在的
   ) {
     // If we captured an error, but getDerivedStateFrom catch is not defined,
     // unmount all the children. componentDidCatch will schedule an update to
     // re-render a fallback. This is temporary until we migrate everyone to
     // the new API.
     // TODO: Warn in a future release.
-    nextChildren = null;
+    nextChildren = null; //没有getDerivedStateFromError
 
     if (enableProfilerTimer) {
       stopProfilerTimerIfRunning(workInProgress);
@@ -563,19 +564,19 @@ function finishClassComponent(
 
   // React DevTools reads this flag.
   workInProgress.effectTag |= PerformedWork;
-  if (current !== null && didCaptureError) {
+  if (current !== null && didCaptureError) { //current !== null非首次渲染
     // If we're recovering from an error, reconcile without reusing any of
     // the existing children. Conceptually, the normal children and the children
     // that are shown on error are two different sets, so we shouldn't reuse
     // normal children even if their identities match.
-    forceUnmountCurrentAndReconcile(
+    forceUnmountCurrentAndReconcile(  //强制重新计算新的child
       current,
       workInProgress,
       nextChildren,
       renderExpirationTime,
     );
   } else {
-    reconcileChildren(
+    reconcileChildren( //正常情况下计算出新的child
       current,
       workInProgress,
       nextChildren,
@@ -592,7 +593,7 @@ function finishClassComponent(
     invalidateContextProvider(workInProgress, Component, true);
   }
 
-  return workInProgress.child;
+  return workInProgress.child;  //return第一个子节点，performUnitOfWork中循环处理的每个节点
 }
 
 function pushHostRootContext(workInProgress) {
@@ -620,15 +621,15 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
       'file an issue.',
   );
   const nextProps = workInProgress.pendingProps;
-  const prevState = workInProgress.memoizedState;
-  const prevChildren = prevState !== null ? prevState.element : null;
+  const prevState = workInProgress.memoizedState;  //看更新具体update时，update.tag=updateState:return的state=update.payload（update.payload={element是对象不是function否则还要执行函数之后才是state=》state=update.payload， state.element=update.payload.element就是传入的渲染的内容）
+  const prevChildren = prevState !== null ? prevState.element : null; //重点：ReactDOM.render时，创建的update并没有给tag赋值=》默认的updateState，并且update.payload={element}={element: element}更新的内容element也就是ReactDOM.render的第一个参数：children-》reactElement
   processUpdateQueue(
     workInProgress,
     updateQueue,
     nextProps,
-    null,
+    null, //instance
     renderExpirationTime,
-  );
+  ); //第一次渲染
   const nextState = workInProgress.memoizedState;
   // Caution: React DevTools currently depends on this property
   // being called "element".
@@ -636,19 +637,19 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
   if (nextChildren === prevChildren) {
     // If the state is the same as before, that's a bailout because we had
     // no work that expires at this time.
-    resetHydrationState();
-    return bailoutOnAlreadyFinishedWork(
+    resetHydrationState();  //服务端渲染时服用服务端产生的节点
+    return bailoutOnAlreadyFinishedWork( //跳出更新
       current,
       workInProgress,
       renderExpirationTime,
     );
   }
   const root: FiberRoot = workInProgress.stateNode;
-  if (
-    (current === null || current.child === null) &&
+  if ( 
+    (current === null || current.child === null) &&  //current === null || current.child === null首次渲染
     root.hydrate &&
     enterHydrationState(workInProgress)
-  ) {
+  ) {  //服务端渲染相关
     // If we don't have any current children this might be the first pass.
     // We always try to hydrate. If this isn't a hydration pass there won't
     // be any children to hydrate which is effectively the same thing as
@@ -905,12 +906,12 @@ function mountIndeterminateComponent(
   Component,
   renderExpirationTime,
 ) {
-  if (_current !== null) {
+  if (_current !== null) {   //mountIndeterminateComponent：component类型未指定说与初次渲染但是此时current!==null，属于抛出promise情况即suspended
     // An indeterminate component only mounts if it suspended inside a non-
     // concurrent tree, in an inconsistent state. We want to tree it like
     // a new mount, even though an empty version of it already committed.
     // Disconnect the alternate pointers.
-    _current.alternate = null;
+    _current.alternate = null;  //初始化便于重新创建
     workInProgress.alternate = null;
     // Since this is conceptually a new fiber, schedule a Placement effect
     workInProgress.effectTag |= Placement;
@@ -950,19 +951,20 @@ function mountIndeterminateComponent(
     ReactCurrentOwner.current = workInProgress;
     value = Component(props, context);
   } else {
-    value = Component(props, context);
+    value = Component(props, context);  //classComponent和functionComponent判断时ClassComponent被赋值了而function使用了默认值，所以workInProgress.tag=IndeterminateComponent说明是function=》此处执行该function，class的话是new Component(props, context)
   }
   // React DevTools reads this flag.
   workInProgress.effectTag |= PerformedWork;
 
+  //classComponent return值是object、并且属性render是function、$$typeof=undefined
   if (
     typeof value === 'object' &&
     value !== null &&
     typeof value.render === 'function' &&
-    value.$$typeof === undefined
+    value.$$typeof === undefined  //!=undefined如REACT_CONTEXT_TYPE、REACT_REF_TYPE等是有$$typeof的
   ) {
     // Proceed under the assumption that this is a class instance
-    workInProgress.tag = ClassComponent;
+    workInProgress.tag = ClassComponent;  //有value.render === 'function' render方法是classComponent
 
     // Push context providers early to prevent context stack mismatches.
     // During mounting we don't know the child context yet as the instance doesn't exist.
@@ -988,7 +990,7 @@ function mountIndeterminateComponent(
       );
     }
 
-    adoptClassInstance(workInProgress, value);
+    adoptClassInstance(workInProgress, value); //value：functionComponent执行value=Component(props, context)=instance，即执行函数后的返回值是instance
     mountClassInstance(workInProgress, Component, props, renderExpirationTime);
     return finishClassComponent(
       null,
@@ -1000,7 +1002,7 @@ function mountIndeterminateComponent(
     );
   } else {
     // Proceed under the assumption that this is a function component
-    workInProgress.tag = FunctionComponent;
+    workInProgress.tag = FunctionComponent;  //函数组件
     if (__DEV__) {
       if (Component) {
         warningWithoutStack(
@@ -1061,7 +1063,7 @@ function mountIndeterminateComponent(
         }
       }
     }
-    reconcileChildren(null, workInProgress, value, renderExpirationTime);
+    reconcileChildren(null, workInProgress, value, renderExpirationTime); //函数组件执行后return的value就是children，所以此处直接调和子节点即可
     return workInProgress.child;
   }
 }
@@ -1591,7 +1593,7 @@ function beginWork(
   workInProgress.expirationTime = NoWork;
 
   switch (workInProgress.tag) {
-    case IndeterminateComponent: {
+    case IndeterminateComponent: {  //按函数组件、类组件其一处理，因为调和子节点创建fiber时fiber.tag默认为IndeterminateComponent，且typeof type = object:函数组件和类组件时，只判断为类组件重新赋值为ClassComponent，函数组件没有，所以先按函数组件执行，返回值判断是函数组件还是类组件，并按结果类型处理
       const elementType = workInProgress.elementType;
       return mountIndeterminateComponent(
         current,

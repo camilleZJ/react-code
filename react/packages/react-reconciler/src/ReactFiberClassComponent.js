@@ -718,7 +718,7 @@ function callComponentWillReceiveProps(
 }
 
 // Invokes the mount life-cycles on a previously never rendered instance.
-function mountClassInstance(  //第一次渲染
+function mountClassInstance(  //第一次渲染，第一次更新
   workInProgress: Fiber,
   ctor: any,
   newProps: any,
@@ -1011,7 +1011,7 @@ function updateClassInstance(
     (typeof instance.UNSAFE_componentWillReceiveProps === 'function' ||
       typeof instance.componentWillReceiveProps === 'function')
   ) {
-    if (oldProps !== newProps || oldContext !== nextContext) {
+    if (oldProps !== newProps || oldContext !== nextContext) {  //二次更新执行的是ComponentWillReceiveProps生命周期函数
       callComponentWillReceiveProps(
         workInProgress,
         instance,
