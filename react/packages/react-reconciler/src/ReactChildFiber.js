@@ -280,7 +280,7 @@ function ChildReconciler(shouldTrackSideEffects) { //参数shouldTrackSideEffect
   function mapRemainingChildren(
     returnFiber: Fiber,
     currentFirstChild: Fiber,
-  ): Map<string | number, Fiber> {  把剩下的Child存储在map中
+  ): Map<string | number, Fiber> {  //把剩下的Child存储在map中
     // Add the remaining children to a temporary map so that we can find them by
     // keys quickly. Implicit (null) keys get added to this set with their index
     // instead.
@@ -343,7 +343,7 @@ function ChildReconciler(shouldTrackSideEffects) { //参数shouldTrackSideEffect
     // This is simpler for the single child case. We only need to do a
     // placement for inserting new children.
     if (shouldTrackSideEffects && newFiber.alternate === null) {
-      newFiber.effectTag = Placement;
+      newFiber.effectTag = Placement;  //判断是否是第一次渲染，如果是的话增加Placement副作用，后期需要挂载 DOM
     }
     return newFiber;
   }
@@ -772,12 +772,12 @@ function ChildReconciler(shouldTrackSideEffects) { //参数shouldTrackSideEffect
     let nextOldFiber = null;
     for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {  //作用：以相同的顺序分别遍历新老children对应的fiber节点，找到key相同的，直到遇到不相同的停止遍历，newIdx值说明数组前newIdx项是相同key的可以复用节点，oldFiber就是停止遍历到的节点fiber
       if (oldFiber.index > newIdx) {  //react渲染时会在每一个fiber上设置index，代表其在所有children中的位置  此处说明新老节点位置不匹配
-        nextOldFiber = oldFiber;
-        oldFiber = null;
-      } else {
+        nextOldFiber = oldFiber;  //index比新的大，那么还是用这个child去遍历下一个新的可能会出现index相同
+        oldFiber = null;  
+      } else { //
         nextOldFiber = oldFiber.sibling;
       }
-      const newFiber = updateSlot(
+      const newFiber = updateSlot(  //对比新旧children相同index的对象的key是否相等，如果是，返回该对象，如果不是，返回null
         returnFiber,
         oldFiber,
         newChildren[newIdx],
@@ -845,7 +845,7 @@ function ChildReconciler(shouldTrackSideEffects) { //参数shouldTrackSideEffect
       return resultingFirstChild;
     }
 
-    //以上两个循环处理后，newChildren还有没被处理完的，可能是数组的顺序发生了变化
+    //以上两个循环处理后，newChildren还有没被处理完的，可能是数组的顺序发生了变化或新增、删除了节点
     // Add all children to a key map for quick lookups.
     const existingChildren = mapRemainingChildren(returnFiber, oldFiber); //把剩下没被处理过的oldFiber存入map中：有key按key存没有按index存
 
@@ -1114,7 +1114,7 @@ function ChildReconciler(shouldTrackSideEffects) { //参数shouldTrackSideEffect
     expirationTime: ExpirationTime,
   ): Fiber {
     const key = element.key;
-    let child = currentFirstChild; //rurrent.child：初次渲染为null
+    let child = currentFirstChild; //current.child：初次渲染为null
     while (child !== null) {
       // TODO: If key === null and child.key === null, then this only applies to
       // the first item in the list.
@@ -1140,11 +1140,11 @@ function ChildReconciler(shouldTrackSideEffects) { //参数shouldTrackSideEffect
           }
           return existing; //找到可以复用的节点就return
         } else { 
-          deleteRemainingChildren(returnFiber, child); //找不到就删点就节点之后去创建节点
+          deleteRemainingChildren(returnFiber, child); //找不到就删掉旧节点之后去创建节点
           break;
         }
       } else {
-        deleteChild(returnFiber, child); //找不到就删点就节点之后去创建节点
+        deleteChild(returnFiber, child); //找不到就删掉旧节点之后去创建节点
       }
       child = child.sibling;
     }
@@ -1165,7 +1165,7 @@ function ChildReconciler(shouldTrackSideEffects) { //参数shouldTrackSideEffect
         returnFiber.mode,
         expirationTime,
       );
-      created.ref = coerceRef(returnFiber, currentFirstChild, element);
+      created.ref = coerceRef(returnFiber, currentFirstChild, element);  //ref类型：object、function、string，此方法是将string ref转换成一个方法，最终会把对象设置到inst.refs上
       created.return = returnFiber;
       return created;
     }
@@ -1179,13 +1179,13 @@ function ChildReconciler(shouldTrackSideEffects) { //参数shouldTrackSideEffect
   ): Fiber {
     const key = portal.key;
     let child = currentFirstChild;
-    while (child !== null) {
+    while (child !== null) { //循环处理找到第一个key相同、类型相同且挂载的容器containerInfo、implementation都相同的节点进行复用，否则删除节点=》遍历处理原因防止新节点和旧节点顺序不一致、个数不一样
       // TODO: If key === null and child.key === null, then this only applies to
       // the first item in the list.
       if (child.key === key) {
         if (
           child.tag === HostPortal &&
-          child.stateNode.containerInfo === portal.containerInfo &&
+          child.stateNode.containerInfo === portal.containerInfo && //渲染节点是否有变化
           child.stateNode.implementation === portal.implementation
         ) {
           deleteRemainingChildren(returnFiber, child.sibling);
@@ -1206,7 +1206,7 @@ function ChildReconciler(shouldTrackSideEffects) { //参数shouldTrackSideEffect
       child = child.sibling;
     }
 
-    const created = createFiberFromPortal(
+    const created = createFiberFromPortal( //没有能复用的，就去创建新节点fiber
       portal,
       returnFiber.mode,
       expirationTime,
@@ -1221,7 +1221,7 @@ function ChildReconciler(shouldTrackSideEffects) { //参数shouldTrackSideEffect
   function reconcileChildFibers(
     returnFiber: Fiber, //workInProgress
     currentFirstChild: Fiber | null, //current.child/null
-    newChild: any,  //Component(nextProps, context);  //获取Componentreturn的内容，注意中参数除了props还有context
+    newChild: any,  //要渲染的内容：props.children、Component(nextProps, context)、instance.render()  //获取Component return的内容，注意中参数除了props还有context
     expirationTime: ExpirationTime, //renderExpirationTime，root.nextExpirationTimeToWorkOn
   ): Fiber | null {
     // This function is not recursive.

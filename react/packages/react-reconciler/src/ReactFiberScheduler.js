@@ -895,7 +895,7 @@ function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
     const returnFiber = workInProgress.return;
     const siblingFiber = workInProgress.sibling;
 
-    if ((workInProgress.effectTag & Incomplete) === NoEffect) {
+    if ((workInProgress.effectTag & Incomplete) === NoEffect) {  //没有抛出错误
       // This fiber completed.
       if (enableProfilerTimer) {
         if (workInProgress.mode & ProfileMode) {
@@ -933,14 +933,14 @@ function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
         // Append all the effects of the subtree and this fiber onto the effect
         // list of the parent. The completion order of the children affects the
         // side-effect order.
-        if (returnFiber.firstEffect === null) {
+        if (returnFiber.firstEffect === null) { //父节点的effect链表还是空的没有记录
           returnFiber.firstEffect = workInProgress.firstEffect;
         }
         if (workInProgress.lastEffect !== null) {
           if (returnFiber.lastEffect !== null) {
             returnFiber.lastEffect.nextEffect = workInProgress.firstEffect;
           }
-          returnFiber.lastEffect = workInProgress.lastEffect;
+          returnFiber.lastEffect = workInProgress.lastEffect; //把子节点的firstEffect-lastEffect链条挂载到其父节点的Effect链条的最后
         }
 
         // If this fiber had side-effects, we append it AFTER the children's
@@ -952,10 +952,10 @@ function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
         const effectTag = workInProgress.effectTag;
         // Skip both NoWork and PerformedWork tags when creating the effect list.
         // PerformedWork effect is read by React DevTools but shouldn't be committed.
-        if (effectTag > PerformedWork) {
+        if (effectTag > PerformedWork) {  //有副作用，workInProgress插入到父节点的Effect链表最后
           if (returnFiber.lastEffect !== null) {
             returnFiber.lastEffect.nextEffect = workInProgress;
-          } else {
+          } else {  //链表是空的
             returnFiber.firstEffect = workInProgress;
           }
           returnFiber.lastEffect = workInProgress;

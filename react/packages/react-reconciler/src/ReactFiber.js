@@ -301,7 +301,7 @@ function shouldConstruct(Component: Function) {
 
 export function isSimpleFunctionComponent(type: any) {
   return (
-    typeof type === 'function' &&
+    typeof type === 'function' &&  //类型是function并且没有class上的一些属性
     !shouldConstruct(type) &&
     type.defaultProps === undefined
   );

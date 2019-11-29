@@ -18,7 +18,7 @@ export function createPortal(
   implementation: any,
   key: ?string = null,
 ): ReactPortal {
-  return {
+  return { //和reactElement差不多
     // This tag allow us to uniquely identify this as a React Portal
     $$typeof: REACT_PORTAL_TYPE,
     key: key == null ? null : '' + key,

@@ -198,14 +198,14 @@ function updateForwardRef(
   renderExpirationTime: ExpirationTime,
 ) {
   const render = type.render;
-  const ref = workInProgress.ref;
+  const ref = workInProgress.ref; //ref是通过props传递的
   if (hasLegacyContextChanged()) {
     // Normally we can bail out on props equality but if context has changed
     // we don't do the bailout and we have to reuse existing props instead.
   } else if (workInProgress.memoizedProps === nextProps) {
     const currentRef = current !== null ? current.ref : null;
     if (ref === currentRef) {
-      return bailoutOnAlreadyFinishedWork(
+      return bailoutOnAlreadyFinishedWork(  //props和ref都没变=》跳过更新
         current,
         workInProgress,
         renderExpirationTime,
@@ -240,9 +240,9 @@ function updateMemoComponent(
   updateExpirationTime,
   renderExpirationTime: ExpirationTime,
 ): null | Fiber {
-  if (current === null) {
-    let type = Component.type;
-    if (isSimpleFunctionComponent(type) && Component.compare === null) {
+  if (current === null) {  //第一次渲染
+    let type = Component.type;  //functionComponent
+    if (isSimpleFunctionComponent(type) && Component.compare === null) {  //isSimpleFunctionComponent判断其不是class而是function
       // If this is a plain function component without default props,
       // and with only the default shallow comparison, we upgrade it
       // to a SimpleMemoComponent to allow fast path updates.
@@ -251,16 +251,16 @@ function updateMemoComponent(
       return updateSimpleMemoComponent(
         current,
         workInProgress,
-        type,
+        type, //Component.type;  //functionComponent
         nextProps,
         updateExpirationTime,
         renderExpirationTime,
       );
     }
-    let child = createFiberFromTypeAndProps(
-      Component.type,
+    let child = createFiberFromTypeAndProps( //上面不符合=》child就是确定的Component.type，所以不用从调和子节点开始了=》提升了性能
+      Component.type,  //注意和下面的区别，react.memo只是实现了props的对比，实际执行的还是Component.type函数组件的更新，不使用调和子节点是因为调和的话就是指执行的是Component的更新
       null,
-      nextProps,
+      nextProps,  //属于Component.type的props而不是Component的
       null,
       workInProgress.mode,
       renderExpirationTime,
@@ -282,14 +282,14 @@ function updateMemoComponent(
     let compare = Component.compare;
     compare = compare !== null ? compare : shallowEqual;
     if (compare(prevProps, nextProps) && current.ref === workInProgress.ref) {
-      return bailoutOnAlreadyFinishedWork(
+      return bailoutOnAlreadyFinishedWork(  //props没变  ref也没变=》跳过更新
         current,
         workInProgress,
         renderExpirationTime,
       );
     }
   }
-  let newChild = createWorkInProgress(
+  let newChild = createWorkInProgress( //所有的props都是作用于传入的functionComponent而不是memo上
     currentChild,
     nextProps,
     renderExpirationTime,
@@ -318,7 +318,7 @@ function updateSimpleMemoComponent(
       shallowEqual(prevProps, nextProps) &&
       current.ref === workInProgress.ref
     ) {
-      return bailoutOnAlreadyFinishedWork(
+      return bailoutOnAlreadyFinishedWork(  //优先级不高且props、ref都没变=》跳过更新
         current,
         workInProgress,
         renderExpirationTime,
@@ -695,31 +695,31 @@ function updateHostComponent(current, workInProgress, renderExpirationTime) {
   const nextProps = workInProgress.pendingProps;
   const prevProps = current !== null ? current.memoizedProps : null;
 
-  let nextChildren = nextProps.children;
-  const isDirectTextChild = shouldSetTextContent(type, nextProps);
+  let nextChildren = nextProps.children; //HostComponent没有state的概念
+  const isDirectTextChild = shouldSetTextContent(type, nextProps);  //判断nextProps是不是纯的字符串
 
   if (isDirectTextChild) {
     // We special case a direct text child of a host node. This is a common
     // case. We won't handle it as a reified child. We will instead handle
     // this in the host environment that also have access to this prop. That
     // avoids allocating another HostText fiber and traversing it.
-    nextChildren = null;
+    nextChildren = null; //若是纯字符串，直接显示即可，不需要再去创建节点
   } else if (prevProps !== null && shouldSetTextContent(type, prevProps)) {
     // If we're switching from a direct text child to a normal child, or to
     // empty, we need to schedule the text content to be reset.
-    workInProgress.effectTag |= ContentReset;
+    workInProgress.effectTag |= ContentReset;  //非文子节点且prevProps是文字节点，那么就需要把之前的文本去掉，生成新的节点，该节点不是文本节点
   }
 
-  markRef(current, workInProgress);
+  markRef(current, workInProgress); //classComponent、hostComponent才会有ref，functionComponent是没有ref的
 
   // Check the host config to see if the children are offscreen/hidden.
   if (
     renderExpirationTime !== Never &&
-    workInProgress.mode & ConcurrentMode &&
-    shouldDeprioritizeSubtree(type, nextProps)
+    workInProgress.mode & ConcurrentMode &&  //ConcurrentMode异步下
+    shouldDeprioritizeSubtree(type, nextProps) //!!props.hidden
   ) {
     // Schedule this fiber to re-render at offscreen priority. Then bailout.
-    workInProgress.expirationTime = Never;
+    workInProgress.expirationTime = Never;  //hidden时=》永远不需要更新，如模拟浏览器滚动条，滑动时不需要浏览器去实时更新--优化点
     return null;
   }
 
@@ -734,11 +734,11 @@ function updateHostComponent(current, workInProgress, renderExpirationTime) {
 
 function updateHostText(current, workInProgress) {
   if (current === null) {
-    tryToClaimNextHydratableInstance(workInProgress);
+    tryToClaimNextHydratableInstance(workInProgress); //Hydrate相关
   }
   // Nothing to do here. This is terminal. We'll do the completion step
   // immediately after.
-  return null;
+  return null; //hostText不需要子节点，只有一个effctTag就是最后提交的时候需要把文本插入到DOM里显示
 }
 
 function resolveDefaultProps(Component, baseProps) {
@@ -1283,7 +1283,7 @@ function updatePortalComponent(
   workInProgress: Fiber,
   renderExpirationTime: ExpirationTime,
 ) {
-  pushHostContainer(workInProgress, workInProgress.stateNode.containerInfo);
+  pushHostContainer(workInProgress, workInProgress.stateNode.containerInfo); //context相关
   const nextChildren = workInProgress.pendingProps;
   if (current === null) {
     // Portals are special because we don't append the children during mount

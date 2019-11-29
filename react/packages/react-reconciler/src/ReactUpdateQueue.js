@@ -366,7 +366,7 @@ function getStateFromUpdate<State>(
         (workInProgress.effectTag & ~ShouldCapture) | DidCapture;
     }
     // Intentional fallthrough
-    case UpdateState: {  //setState
+    case UpdateState: {  //setState:第一个参数要么是object{}要么是function
       const payload = update.payload;
       let partialState;
       if (typeof payload === 'function') {
@@ -381,7 +381,7 @@ function getStateFromUpdate<State>(
           }
         }
         partialState = payload.call(instance, prevState, nextProps);
-      } else { //typeof payload = object
+      } else { //typeof payload = object：{}
         // Partial state object
         partialState = payload; 
       }
