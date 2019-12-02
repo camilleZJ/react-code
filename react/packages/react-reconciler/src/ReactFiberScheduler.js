@@ -855,8 +855,8 @@ function resetChildExpirationTime(
   } else {
     let child = workInProgress.child;
     while (child !== null) {
-      const childUpdateExpirationTime = child.expirationTime;
-      const childChildExpirationTime = child.childExpirationTime;
+      const childUpdateExpirationTime = child.expirationTime; //child自身更新的过期时间
+      const childChildExpirationTime = child.childExpirationTime;  //child子树种优先级最高的那个更新的过期时间
       if (
         newChildExpirationTime === NoWork ||
         (childUpdateExpirationTime !== NoWork &&
@@ -913,7 +913,7 @@ function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
           stopProfilerTimerIfRunningAndRecordDelta(workInProgress, false);
         }
       } else {
-        nextUnitOfWork = completeWork(
+        nextUnitOfWork = completeWork(  //没有错误执行completeWork，完成当前节点的更新
           current,
           workInProgress,
           nextRenderExpirationTime,
@@ -936,12 +936,12 @@ function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
         if (returnFiber.firstEffect === null) { //父节点的effect链表还是空的没有记录
           returnFiber.firstEffect = workInProgress.firstEffect;
         }
-        if (workInProgress.lastEffect !== null) {
+        if (workInProgress.lastEffect !== null) { 
           if (returnFiber.lastEffect !== null) {
             returnFiber.lastEffect.nextEffect = workInProgress.firstEffect;
           }
           returnFiber.lastEffect = workInProgress.lastEffect; //把子节点的firstEffect-lastEffect链条挂载到其父节点的Effect链条的最后
-        }
+        } //这个wihle处理的节点只要没有sibling就不会跳出而是一层一层向上找父元素returnFiber并进行completeUnitOfWork处理，把child的firstEffect、lastEffect单向链表一层层往其父元素上挂，直到RootFiber,firstEffect、lastEffect挂载的是要更新的节点的workInProcess
 
         // If this fiber had side-effects, we append it AFTER the children's
         // side-effects. We can perform certain side-effects earlier if
@@ -949,16 +949,16 @@ function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
         // to schedule our own side-effect on our own list because if end up
         // reusing children we'll schedule this effect onto itself since we're
         // at the end.
-        const effectTag = workInProgress.effectTag;
+        const effectTag = workInProgress.effectTag; //有更新effectTag才会有值
         // Skip both NoWork and PerformedWork tags when creating the effect list.
         // PerformedWork effect is read by React DevTools but shouldn't be committed.
-        if (effectTag > PerformedWork) {  //有副作用，workInProgress插入到父节点的Effect链表最后
+        if (effectTag > PerformedWork) {  //有副作用，workInProgress插入到父节点的Effect链表最后，effectTag=PerformedWork是没有副作用的节点
           if (returnFiber.lastEffect !== null) {
-            returnFiber.lastEffect.nextEffect = workInProgress;
+            returnFiber.lastEffect.nextEffect = workInProgress; 
           } else {  //链表是空的
             returnFiber.firstEffect = workInProgress;
           }
-          returnFiber.lastEffect = workInProgress;
+          returnFiber.lastEffect = workInProgress;//最后都会把有更新的节点workInProgress挂载到父元素的firstEffect、lastEffect单向链表上，上面是把这个父元素的effect连继续往其父元素上挂直到rootFiber
         }
       }
 
@@ -986,7 +986,7 @@ function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
       // This fiber did not complete because something threw. Pop values off
       // the stack without entering the complete phase. If this is a boundary,
       // capture values if possible.
-      const next = unwindWork(workInProgress, nextRenderExpirationTime);
+      const next = unwindWork(workInProgress, nextRenderExpirationTime);  //有错误执行
       // Because this fiber did not complete, don't reset its expiration time.
       if (workInProgress.effectTag & DidCapture) {
         // Restarting an error boundary
