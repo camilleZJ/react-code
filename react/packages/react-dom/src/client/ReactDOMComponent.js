@@ -362,13 +362,13 @@ export function createElement(
   // tags get no namespace.
   const ownerDocument: Document = getOwnerDocumentFromRootContainer(
     rootContainerElement,
-  );
+  ); //获取document，从而通过document Api去创建节点=>调用的Api都是ja原生的Api
   let domElement: Element;
-  let namespaceURI = parentNamespace;
+  let namespaceURI = parentNamespace;  //react中区分：html普通节点、svg节点等
   if (namespaceURI === HTML_NAMESPACE) {
     namespaceURI = getIntrinsicNamespace(type);
   }
-  if (namespaceURI === HTML_NAMESPACE) {
+  if (namespaceURI === HTML_NAMESPACE) {  //html标签
     if (__DEV__) {
       isCustomComponentTag = isCustomComponent(type, props);
       // Should this check be gated by parent namespace? Not sure we want to
@@ -382,6 +382,7 @@ export function createElement(
       );
     }
 
+    //对特殊的html标签进行处理
     if (type === 'script') {
       // Create the script via .innerHTML so its "parser-inserted" flag is
       // set to true and it does not execute
@@ -389,7 +390,7 @@ export function createElement(
       div.innerHTML = '<script><' + '/script>'; // eslint-disable-line
       // This is guaranteed to yield a script element.
       const firstChild = ((div.firstChild: any): HTMLScriptElement);
-      domElement = div.removeChild(firstChild);
+      domElement = div.removeChild(firstChild); //div.removeChild会返回被删除的节点即script，说明不直接创建script标签原因看上面英文注释，用.innerHTML方式创建会把parser-inserted标志设为true就不会自动执行脚本
     } else if (typeof props.is === 'string') {
       // $FlowIssue `createElement` should be updated for Web Components
       domElement = ownerDocument.createElement(type, {is: props.is});
@@ -397,7 +398,7 @@ export function createElement(
       // Separate else branch instead of using `props.is || undefined` above because of a Firefox bug.
       // See discussion in https://github.com/facebook/react/pull/6896
       // and discussion in https://bugzilla.mozilla.org/show_bug.cgi?id=1276240
-      domElement = ownerDocument.createElement(type);
+      domElement = ownerDocument.createElement(type); //普通标签
       // Normally attributes are assigned in `setInitialDOMProperties`, however the `multiple`
       // attribute on `select`s needs to be added before `option`s are inserted. This prevents
       // a bug where the `select` does not scroll to the correct option because singular
@@ -405,7 +406,7 @@ export function createElement(
       // See https://github.com/facebook/react/issues/13222
       if (type === 'select' && props.multiple) {
         const node = ((domElement: any): HTMLSelectElement);
-        node.multiple = true;
+        node.multiple = true; //
       }
     }
   } else {

@@ -15,7 +15,7 @@ const internalInstanceKey = '__reactInternalInstance$' + randomKey;
 const internalEventHandlersKey = '__reactEventHandlers$' + randomKey;
 
 export function precacheFiberNode(hostInst, node) {
-  node[internalInstanceKey] = hostInst;
+  node[internalInstanceKey] = hostInst; //在新创建的DOM节点上添加属性用来挂载对应的fiber对象：workInProcess  node《=》workInProcess
 }
 
 /**
@@ -83,5 +83,5 @@ export function getFiberCurrentPropsFromNode(node) {
 }
 
 export function updateFiberProps(node, props) {
-  node[internalEventHandlersKey] = props;
+  node[internalEventHandlersKey] = props; //在新创建的DOM节点domElement上添加指定属性用来挂载props：workInProcess.pendingProps
 }

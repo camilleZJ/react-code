@@ -104,7 +104,7 @@ if (supportsMutation) {
     let node = workInProgress.child;
     while (node !== null) {
       if (node.tag === HostComponent || node.tag === HostText) {
-        appendInitialChild(parent, node.stateNode);
+        appendInitialChild(parent, node.stateNode);  //parent.appendChild(child)新创建好的DOM，发现其子节点中有DOM原生节点或text文本节点直接通过appendChild把子节点的node.stateNode插入到新创建好的节点中
       } else if (node.tag === HostPortal) {
         // If we have a portal child, then we don't want to traverse
         // down its children. Instead, we'll get insertions from each child in
@@ -572,9 +572,9 @@ function completeWork(
     }
     case HostComponent: {
       popHostContext(workInProgress);
-      const rootContainerInstance = getRootHostContainer();
+      const rootContainerInstance = getRootHostContainer();  //context相关
       const type = workInProgress.type;
-      if (current !== null && workInProgress.stateNode != null) {
+      if (current !== null && workInProgress.stateNode != null) {  //非首次渲染
         updateHostComponent(
           current,
           workInProgress,
@@ -586,7 +586,7 @@ function completeWork(
         if (current.ref !== workInProgress.ref) {
           markRef(workInProgress);
         }
-      } else {
+      } else {  //首次更新
         if (!newProps) {
           invariant(
             workInProgress.stateNode !== null,
@@ -618,7 +618,7 @@ function completeWork(
             markUpdate(workInProgress);
           }
         } else {
-          let instance = createInstance(
+          let instance = createInstance(  //创建DOM节点的过程：instance创建好的DOM节点
             type,
             newProps,
             rootContainerInstance,

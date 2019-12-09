@@ -189,14 +189,14 @@ export function createInstance(
   } else {
     parentNamespace = ((hostContext: any): HostContextProd);
   }
-  const domElement: Instance = createElement(
+  const domElement: Instance = createElement(  //创建DOM
     type,
     props,
     rootContainerInstance,
     parentNamespace,
   );
-  precacheFiberNode(internalInstanceHandle, domElement);
-  updateFiberProps(domElement, props);
+  precacheFiberNode(internalInstanceHandle, domElement); //在新创建的节点domElement上添加属性来挂载workInProcess fiber对象
+  updateFiberProps(domElement, props);  //在新创建的节点domElement上添加属性来挂载props
   return domElement;
 }
 
