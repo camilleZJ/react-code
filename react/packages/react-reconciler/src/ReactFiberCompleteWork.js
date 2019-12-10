@@ -98,7 +98,7 @@ if (supportsMutation) {
     workInProgress: Fiber,
     needsVisibilityToggle: boolean,
     isHidden: boolean,
-  ) {
+  ) {  //d对于刚创建好的DOM标签parent，遍历其所有子节点child、child.sibling找到第一层DOM原生标签或文本执行parent.appendChild()
     // We only have the top Fiber that was created but we need recurse down its
     // children to find all the terminal nodes.
     let node = workInProgress.child;
@@ -109,7 +109,7 @@ if (supportsMutation) {
         // If we have a portal child, then we don't want to traverse
         // down its children. Instead, we'll get insertions from each child in
         // the portal directly.
-      } else if (node.child !== null) {
+      } else if (node.child !== null) { //满足以上两个就执行对应操作，不满足就继续向下找DOM原生节点，直到找到第一层，就会去处理sibling的第一层
         node.child.return = node;
         node = node.child;
         continue;
@@ -141,7 +141,7 @@ if (supportsMutation) {
     // If we have an alternate, that means this is an update and we need to
     // schedule a side-effect to do the updates.
     const oldProps = current.memoizedProps;
-    if (oldProps === newProps) {
+    if (oldProps === newProps) {  //说明props对象没有发生变化=》不需要更新
       // In mutation mode, this is sufficient for a bailout because
       // we won't touch this node even if children changed.
       return;
@@ -151,12 +151,12 @@ if (supportsMutation) {
     // have newProps so we'll have to reuse them.
     // TODO: Split the update API as separate for the props vs. children.
     // Even better would be if children weren't special cased at all tho.
-    const instance: Instance = workInProgress.stateNode;
+    const instance: Instance = workInProgress.stateNode; //获取对应的DOM节点
     const currentHostContext = getHostContext();
     // TODO: Experiencing an error where oldProps is null. Suggests a host
     // component is hitting the resume path. Figure out why. Possibly
     // related to `hidden`.
-    const updatePayload = prepareUpdate(
+    const updatePayload = prepareUpdate( //diff对比
       instance,
       type,
       oldProps,
@@ -165,11 +165,11 @@ if (supportsMutation) {
       currentHostContext,
     );
     // TODO: Type this specific to this type of component.
-    workInProgress.updateQueue = (updatePayload: any);
+    workInProgress.updateQueue = (updatePayload: any);  //HostComponent的updateQueue赋值
     // If the update payload indicates that there is a change or if there
     // is a new ref we mark this as an update. All the work is done in commitWork.
     if (updatePayload) {
-      markUpdate(workInProgress);
+      markUpdate(workInProgress);  //workInProgress.effectTag |= Update打标记，在commitRoot时处理
     }
   };
   updateHostText = function(
@@ -618,7 +618,7 @@ function completeWork(
             markUpdate(workInProgress);
           }
         } else {
-          let instance = createInstance(  //创建DOM节点的过程：instance创建好的DOM节点
+          let instance = createInstance(  //创建DOM节点的过程并把workInProcess和props挂载到新建的DOM标签上
             type,
             newProps,
             rootContainerInstance,
@@ -626,26 +626,26 @@ function completeWork(
             workInProgress,
           );
 
-          appendAllChildren(instance, workInProgress, false, false);
+          appendAllChildren(instance, workInProgress, false, false); //遍历其子节点找到所有子节点中第一层原生DOM标签或文本appendChild到instance中
 
           // Certain renderers require commit-time effects for initial mount.
           // (eg DOM renderer supports auto-focus for certain elements).
           // Make sure such renderers get scheduled for later work.
           if (
-            finalizeInitialChildren(
+            finalizeInitialChildren(  //DOM上有事件监听进行事件初始化
               instance,
               type,
               newProps,
               rootContainerInstance,
               currentHostContext,
-            )
+            ) //返回值：可以设置焦点的标签（button、input、select、textarea）上的属性值：autoFocus
           ) {
-            markUpdate(workInProgress);
+            markUpdate(workInProgress); //需要autoFocus：在workInProcess上打标记，再更新Update阶段需要进行特殊处理
           }
-          workInProgress.stateNode = instance;
+          workInProgress.stateNode = instance;   //HostComponent的workInProgress.stateNode为创建好的DOM标签
         }
 
-        if (workInProgress.ref !== null) {
+        if (workInProgress.ref !== null) { //ref处理
           // If there is a ref on a host node we need to schedule a callback
           markRef(workInProgress);
         }

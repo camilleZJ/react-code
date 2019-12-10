@@ -474,7 +474,7 @@ export function setInitialProperties(
   switch (tag) {
     case 'iframe':
     case 'object':
-      trapBubbledEvent(TOP_LOAD, domElement);
+      trapBubbledEvent(TOP_LOAD, domElement);  //绑定事件
       props = rawProps;
       break;
     case 'video':
@@ -595,7 +595,7 @@ export function diffProperties(
     case 'input':
       lastProps = ReactDOMInput.getHostProps(domElement, lastRawProps);
       nextProps = ReactDOMInput.getHostProps(domElement, nextRawProps);
-      updatePayload = [];
+      updatePayload = []; //注意：input、option、select、textarea的此值都是空数组 if(updatePayload)返回true，所以还是会执行markUpdate
       break;
     case 'option':
       lastProps = ReactDOMOption.getHostProps(domElement, lastRawProps);
@@ -625,19 +625,19 @@ export function diffProperties(
       break;
   }
 
-  assertValidProps(tag, nextProps);
-
+  assertValidProps(tag, nextProps);  //校验警告
+ 
   let propKey;
   let styleName;
   let styleUpdates = null;
   for (propKey in lastProps) {
-    if (
-      nextProps.hasOwnProperty(propKey) ||
-      !lastProps.hasOwnProperty(propKey) ||
-      lastProps[propKey] == null
+    if ( //如果不符合这个判断那么就删除
+      nextProps.hasOwnProperty(propKey) ||  //新的有
+      !lastProps.hasOwnProperty(propKey) || //老的没有
+      lastProps[propKey] == null //老的为null
     ) {
       continue;
-    }
+    }  //主要找老的有的属性且不为null但是新的没有=》删掉
     if (propKey === STYLE) {
       const lastStyle = lastProps[propKey];
       for (styleName in lastStyle) {
@@ -645,7 +645,7 @@ export function diffProperties(
           if (!styleUpdates) {
             styleUpdates = {};
           }
-          styleUpdates[styleName] = '';
+          styleUpdates[styleName] = '';  //更新为''=》删除原有的style样式
         }
       }
     } else if (propKey === DANGEROUSLY_SET_INNER_HTML || propKey === CHILDREN) {
@@ -674,10 +674,10 @@ export function diffProperties(
     const nextProp = nextProps[propKey];
     const lastProp = lastProps != null ? lastProps[propKey] : undefined;
     if (
-      !nextProps.hasOwnProperty(propKey) ||
+      !nextProps.hasOwnProperty(propKey) || //判断原型上有没有
       nextProp === lastProp ||
       (nextProp == null && lastProp == null)
-    ) {
+    ) { //原型上没有或者是null或者前后props没有变化=》不需要加入到updatePayload里
       continue;
     }
     if (propKey === STYLE) {
