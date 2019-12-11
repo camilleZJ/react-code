@@ -572,7 +572,7 @@ function completeWork(
     }
     case HostComponent: {
       popHostContext(workInProgress);
-      const rootContainerInstance = getRootHostContainer();  //context相关
+      const rootContainerInstance = getRootHostContainer();  //context相关，就是获取fiberRoot上的containerInfo，主要用来获取codument对象，从而调用js原生Api去创建DOM节点，使用时会判断其nodeType === DOCUMENT_NODE，是=》该对象为document否则使用window.document
       const type = workInProgress.type;
       if (current !== null && workInProgress.stateNode != null) {  //非首次渲染
         updateHostComponent(
@@ -654,12 +654,12 @@ function completeWork(
     }
     case HostText: {
       let newText = newProps;
-      if (current && workInProgress.stateNode != null) {
+      if (current && workInProgress.stateNode != null) { //非首次更新
         const oldText = current.memoizedProps;
         // If we have an alternate, that means this is an update and we need
         // to schedule a side-effect to do the updates.
-        updateHostText(current, workInProgress, oldText, newText);
-      } else {
+        updateHostText(current, workInProgress, oldText, newText); //直接对比oldText是否相等newText，不等打标记更新
+      } else {  //首次渲染
         if (typeof newText !== 'string') {
           invariant(
             workInProgress.stateNode !== null,
@@ -668,7 +668,7 @@ function completeWork(
           );
           // This can happen when we abort work.
         }
-        const rootContainerInstance = getRootHostContainer();
+        const rootContainerInstance = getRootHostContainer();  //fiberRoot上的containerInfo，获取document对象
         const currentHostContext = getHostContext();
         let wasHydrated = popHydrationState(workInProgress);
         if (wasHydrated) {
@@ -681,7 +681,7 @@ function completeWork(
             rootContainerInstance,
             currentHostContext,
             workInProgress,
-          );
+          );  //workInProgress.stateNode为新创建好的textNode节点
         }
       }
       break;

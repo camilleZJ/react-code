@@ -278,7 +278,7 @@ export function createTextInstance(
     validateDOMNesting(null, text, hostContextDev.ancestorInfo);
   }
   const textNode: TextInstance = createTextNode(text, rootContainerInstance);
-  precacheFiberNode(internalInstanceHandle, textNode);
+  precacheFiberNode(internalInstanceHandle, textNode); //和HostComponent一样，主要是在新创建好的node节点上通过属性把workInProcess挂载上
   return textNode;
 }
 

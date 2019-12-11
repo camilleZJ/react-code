@@ -234,11 +234,11 @@ function ensureListeningTo(rootContainerElement, registrationName) {
 
 function getOwnerDocumentFromRootContainer(
   rootContainerElement: Element | Document,
-): Document {
+): Document {  //rootContainerElement是fiberRoot上的containerInfo
   return rootContainerElement.nodeType === DOCUMENT_NODE
     ? (rootContainerElement: any)
-    : rootContainerElement.ownerDocument;
-}
+    : rootContainerElement.ownerDocument;  //window.document
+}  //不直接使用window.document，以上实现主要为了兼容多平台
 
 function noop() {}
 
@@ -442,7 +442,7 @@ export function createTextNode(
 ): Text {
   return getOwnerDocumentFromRootContainer(rootContainerElement).createTextNode(
     text,
-  );
+  );  //先获取document对象，再调用js原生Api：createTextNode去创建文本节点
 }
 
 export function setInitialProperties(

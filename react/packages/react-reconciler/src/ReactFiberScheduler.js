@@ -1225,10 +1225,10 @@ function renderRoot(
     try {
       workLoop(isYieldy); //循环执行workLoop
     } catch (thrownValue) {
-      if (nextUnitOfWork === null) {
+      if (nextUnitOfWork === null) { //正常不会出现为null的=》致命错误
         // This is a fatal error.
-        didFatal = true;
-        onUncaughtError(thrownValue);
+        didFatal = true;  
+        onUncaughtError(thrownValue); //中断渲染
       } else {
         if (__DEV__) {
           // Reset global debug state
@@ -1253,7 +1253,7 @@ function renderRoot(
 
         const sourceFiber: Fiber = nextUnitOfWork;
         let returnFiber = sourceFiber.return;
-        if (returnFiber === null) {
+        if (returnFiber === null) { //return为null说明是更新rootFiber，rootFiber是没用用户参与的更新=》react级别的错误
           // This is the root. The root could capture its own errors. However,
           // we don't know if it errors before or after we pushed the host
           // context. This information is needed to avoid a stack mismatch.
@@ -1261,9 +1261,9 @@ function renderRoot(
           // which phase it fails in, but doesn't seem worth it. At least
           // for now.
           didFatal = true;
-          onUncaughtError(thrownValue);
-        } else {
-          throwException(
+          onUncaughtError(thrownValue); //致命错误 中断渲染
+        } else { //除了以上就是常规操作中出现了错误
+          throwException(  //常规操作出现异常抛出
             root,
             returnFiber,
             sourceFiber,
@@ -2383,7 +2383,7 @@ function onUncaughtError(error: mixed) {
   );
   // Unschedule this root so we don't work on it again until there's
   // another update.
-  nextFlushedRoot.expirationTime = NoWork;
+  nextFlushedRoot.expirationTime = NoWork;  //修改正在渲染的节点的expirationTime = NoWork=》更新任务不在执行，中断渲染
   if (!hasUnhandledError) {
     hasUnhandledError = true;
     unhandledError = error;
