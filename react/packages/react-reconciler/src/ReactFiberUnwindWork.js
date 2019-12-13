@@ -108,7 +108,7 @@ function createClassErrorUpdate(
 
   const inst = fiber.stateNode;
   if (inst !== null && typeof inst.componentDidCatch === 'function') {
-    update.callback = function callback() {
+    update.callback = function callback() { //组件出错会向上去找能处理这个错误的classComponent来进行错误捕获处理，若是都没有：才会到root上去处理
       if (typeof getDerivedStateFromError !== 'function') {
         // To preserve the preexisting retry behavior of error boundaries,
         // we keep track of which ones already failed during this batch.
@@ -156,7 +156,7 @@ function throwException(
   if (
     value !== null &&
     typeof value === 'object' &&
-    typeof value.then === 'function'
+    typeof value.then === 'function' //promise抛出的异常，suspence相关
   ) {
     // This is a thenable.
     const thenable: Thenable = (value: any);
@@ -321,12 +321,12 @@ function throwException(
   // We didn't find a boundary that could handle this type of exception. Start
   // over and traverse parent path again, this time treating the exception
   // as an error.
-  renderDidError();
+  renderDidError(); //nextRenderDidError = true
   value = createCapturedValue(value, sourceFiber);
   let workInProgress = returnFiber;
   do {
     switch (workInProgress.tag) {
-      case HostRoot: {
+      case HostRoot: {  //一层层向上找能捕获错误的classComponent，若是都没有才到root上去处理错误
         const errorInfo = value;
         workInProgress.effectTag |= ShouldCapture;
         workInProgress.expirationTime = renderExpirationTime;
@@ -349,7 +349,7 @@ function throwException(
             (instance !== null &&
               typeof instance.componentDidCatch === 'function' &&
               !isAlreadyFailedLegacyErrorBoundary(instance)))
-        ) {
+        ) {  //找到第一个能进行错误处理的classComponent来捕获错误，进行：getDerivedStateFromError和componentDidCatch错误处理
           workInProgress.effectTag |= ShouldCapture;
           workInProgress.expirationTime = renderExpirationTime;
           // Schedule the error boundary to re-render using updated state
@@ -381,7 +381,7 @@ function unwindWork(
       }
       const effectTag = workInProgress.effectTag;
       if (effectTag & ShouldCapture) {
-        workInProgress.effectTag = (effectTag & ~ShouldCapture) | DidCapture;
+        workInProgress.effectTag = (effectTag & ~ShouldCapture) | DidCapture; //ShouldCapture改为DidCapture
         return workInProgress;
       }
       return null;

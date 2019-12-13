@@ -999,7 +999,7 @@ function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
         ReactCurrentFiber.resetCurrentFiber();
       }
 
-      if (next !== null) {
+      if (next !== null) {  //捕获到了错误：next是报错节点本身（本身可以捕获错误）或以上某个能处理错误的组件workInProcess
         stopWorkTimer(workInProgress);
         if (__DEV__ && ReactFiberInstrumentation.debugTool) {
           ReactFiberInstrumentation.debugTool.onCompleteWork(workInProgress);
@@ -1022,14 +1022,15 @@ function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
         // back here again.
         // Since we're restarting, remove anything that is not a host effect
         // from the effect tag.
-        next.effectTag &= HostEffectMask;
+        next.effectTag &= HostEffectMask;  //&HostEffectMask是排除Incomplete和ShouldCapture，DidCapture会保存下来-》看ReactSideEffectTags.js
         return next;
       }
 
-      if (returnFiber !== null) {
+      //next=null，该节点没有错误处理能力
+      if (returnFiber !== null) { //还没到rootFiber
         // Mark the parent fiber as incomplete and clear its effect list.
         returnFiber.firstEffect = returnFiber.lastEffect = null;
-        returnFiber.effectTag |= Incomplete;
+        returnFiber.effectTag |= Incomplete;  //子树节点报错，本身及一层层的fiber.return父节点都会增加effectTag |= Incomplete，直到找到第一个能处理错误的组件添加effectTag |= ShouldCapture
       }
 
       if (__DEV__ && ReactFiberInstrumentation.debugTool) {
@@ -1270,8 +1271,8 @@ function renderRoot(
             thrownValue,
             nextRenderExpirationTime,
           );
-          nextUnitOfWork = completeUnitOfWork(sourceFiber);
-          continue;
+          nextUnitOfWork = completeUnitOfWork(sourceFiber);  //该节点出错，错误处理后立马completeUnitOfWork该节点，因为该节点已经出错不需要去渲染其所有子节点了，执行completeUnitOfWork中的unwindWork
+          continue;  //nextUnitOfWork是从报错节点一层层向上找的某个节点的sibling或者是能处理报错节点的第一个组件，该组件的effectTag已由ShouldCapture变为didCapture
         }
       }
     }
