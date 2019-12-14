@@ -149,9 +149,9 @@ function throwException(
   renderExpirationTime: ExpirationTime,
 ) {
   // The source fiber did not complete.
-  sourceFiber.effectTag |= Incomplete;
+  sourceFiber.effectTag |= Incomplete; //出错的节点的effectTag设为Incomplete
   // Its effect list is no longer valid.
-  sourceFiber.firstEffect = sourceFiber.lastEffect = null;
+  sourceFiber.firstEffect = sourceFiber.lastEffect = null; //出错的节点的effect链清空
 
   if (
     value !== null &&

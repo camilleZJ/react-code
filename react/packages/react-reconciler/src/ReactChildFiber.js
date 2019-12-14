@@ -1336,7 +1336,7 @@ function ChildReconciler(shouldTrackSideEffects) { //参数shouldTrackSideEffect
     }
 
     // Remaining cases are all treated as empty.
-    return deleteRemainingChildren(returnFiber, currentFirstChild);  //以上都不满足那么说明新产生的节点newChild是null=》删除里面所有的节点：oldChild中的所有节点
+    return deleteRemainingChildren(returnFiber, currentFirstChild);  //以上都不满足那么说明新产生的节点newChild是null=》删除里面所有的节点：oldChild中的所有节点，错误的节点会强制删除所有子节点
   }
 
   return reconcileChildFibers;

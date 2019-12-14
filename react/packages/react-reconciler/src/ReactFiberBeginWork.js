@@ -172,22 +172,24 @@ function forceUnmountCurrentAndReconcile(
   // To do this, we're going to go through the reconcile algorithm twice. In
   // the first pass, we schedule a deletion for all the current children by
   // passing null.
-  workInProgress.child = reconcileChildFibers(
+  workInProgress.child = reconcileChildFibers( //强制把子节点删掉
     workInProgress,
     current.child,
-    null,
+    null,  //newChildren为null，强制把子节点删掉渲染出一个没有子树的classComponent：deleteRemainingChildren
     renderExpirationTime,
-  );
+  );  //删除current.child以及所有sibling子节点之后return null
   // In the second pass, we mount the new children. The trick here is that we
   // pass null in place of where we usually pass the current child set. This has
   // the effect of remounting all children regardless of whether their their
   // identity matches.
-  workInProgress.child = reconcileChildFibers(
+  workInProgress.child = reconcileChildFibers( //在渲染一遍，oldChilren为null
     workInProgress,
-    null,
-    nextChildren,
+    null,  //currentFirstChild为null不涉及key值对比复用fiber而是直接创建
+    nextChildren, //从有错误的updateQueue中计算出了一个新的state，所以直接创建fiber即可
     renderExpirationTime,
   );
+
+  //第一次渲染强制把子树清空，第二次直接渲染nextChildren，就不需要根据key对比了=》提高性能
 }
 
 function updateForwardRef(
@@ -569,7 +571,7 @@ function finishClassComponent(
     // the existing children. Conceptually, the normal children and the children
     // that are shown on error are two different sets, so we shouldn't reuse
     // normal children even if their identities match.
-    forceUnmountCurrentAndReconcile(  //强制重新计算新的child
+    forceUnmountCurrentAndReconcile(  //强制重新计算新的child，报错了不会进入下面的调和子节点
       current,
       workInProgress,
       nextChildren,
