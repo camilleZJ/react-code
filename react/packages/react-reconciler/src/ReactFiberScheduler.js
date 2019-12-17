@@ -522,8 +522,8 @@ function markLegacyErrorBoundaryAsFailed(instance: mixed) {
   }
 }
 
-function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
-  isWorking = true;
+function commitRoot(root: FiberRoot, finishedWork: Fiber): void {  //commitRoot不像renderRoot可以中断，该阶段不能中断，所以react尽可能少的把任务交到高阶段处理
+  isWorking = true; //renderRoot开始也设置此值为true，结束设为false
   isCommitting = true;
   startCommitTimer();
 
@@ -533,7 +533,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
       'related to the return field. This error is likely caused by a bug ' +
       'in React. Please file an issue.',
   );
-  const committedExpirationTime = root.pendingCommitExpirationTime;
+  const committedExpirationTime = root.pendingCommitExpirationTime;  //renderRoot阶段赋值的pendingCommitExpirationTime就是renderRoot阶段处理的expirationTime
   invariant(
     committedExpirationTime !== NoWork,
     'Cannot commit an incomplete root. This error is likely caused by a ' +
@@ -544,15 +544,15 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
   // Update the pending priority levels to account for the work that we are
   // about to commit. This needs to happen before calling the lifecycles, since
   // they may schedule additional updates.
-  const updateExpirationTimeBeforeCommit = finishedWork.expirationTime;
-  const childExpirationTimeBeforeCommit = finishedWork.childExpirationTime;
+  const updateExpirationTimeBeforeCommit = finishedWork.expirationTime; //expirationTime也是记录所有子树中优先级最高的，大多数时候和childExpirationTime相同，除了强制指定，如上renderRoot出错时suspend中强制root.expirationTime=Sync
+  const childExpirationTimeBeforeCommit = finishedWork.childExpirationTime; //finishedWork为rootFiber，所以childExpirationTime是所有子树中优先级最高的节点的expirationTime
   const earliestRemainingTimeBeforeCommit =
     updateExpirationTimeBeforeCommit === NoWork ||
     (childExpirationTimeBeforeCommit !== NoWork &&
       childExpirationTimeBeforeCommit < updateExpirationTimeBeforeCommit)
       ? childExpirationTimeBeforeCommit
-      : updateExpirationTimeBeforeCommit;
-  markCommittedPriorityLevels(root, earliestRemainingTimeBeforeCommit);
+      : updateExpirationTimeBeforeCommit;  //取优先级最小且不是NoWork
+  markCommittedPriorityLevels(root, earliestRemainingTimeBeforeCommit); //优先级标记
 
   let prevInteractions: Set<Interaction> = (null: any);
   if (enableSchedulerTracing) {
@@ -566,12 +566,12 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
   ReactCurrentOwner.current = null;
 
   let firstEffect;
-  if (finishedWork.effectTag > PerformedWork) {
+  if (finishedWork.effectTag > PerformedWork) {  //finishedWork也需要在commit阶段处理
     // A fiber's effect list consists only of its children, not itself. So if
     // the root has an effect, we need to add it to the end of the list. The
     // resulting list is the set that would belong to the root's parent, if
     // it had one; that is, all the effects in the tree including the root.
-    if (finishedWork.lastEffect !== null) {
+    if (finishedWork.lastEffect !== null) {  //将finishedWork加入到effect链表最后
       finishedWork.lastEffect.nextEffect = finishedWork;
       firstEffect = finishedWork.firstEffect;
     } else {
@@ -598,7 +598,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
       }
     } else {
       try {
-        commitBeforeMutationLifecycles();
+        commitBeforeMutationLifecycles(); //调用classComponent上的生命周期方法
       } catch (e) {
         didError = true;
         error = e;
@@ -641,7 +641,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
       }
     } else {
       try {
-        commitAllHostEffects();
+        commitAllHostEffects(); //操作DOM节点需要做的内容：如dom节点是新增的需要做插入的操作，删除、属性修改等
       } catch (e) {
         didError = true;
         error = e;
@@ -680,7 +680,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
     let didError = false;
     let error;
     if (__DEV__) {
-      invokeGuardedCallback(
+      invokeGuardedCallback(  //
         null,
         commitAllLifeCycles,
         null,
@@ -693,7 +693,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
       }
     } else {
       try {
-        commitAllLifeCycles(root, committedExpirationTime);
+        commitAllLifeCycles(root, committedExpirationTime); //组件相关的生命周期方法都会在此处调用
       } catch (e) {
         didError = true;
         error = e;
@@ -721,6 +721,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
     ReactFiberInstrumentation.debugTool.onCommitWork(finishedWork);
   }
 
+  //再一次进行上面最小优先级时间判断，原因：上面循环时执行了生命周期方法，这些方法中可能又产生了更新finishedWork.childExpirationTime可能发生了变化
   const updateExpirationTimeAfterCommit = finishedWork.expirationTime;
   const childExpirationTimeAfterCommit = finishedWork.childExpirationTime;
   const earliestRemainingTimeAfterCommit =
@@ -732,11 +733,11 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
   if (earliestRemainingTimeAfterCommit === NoWork) {
     // If there's no remaining work, we can clear the set of already failed
     // error boundaries.
-    legacyErrorBoundariesThatAlreadyFailed = null;
+    legacyErrorBoundariesThatAlreadyFailed = null; //上面的判断主要设置该全局变量
   }
-  onCommit(root, earliestRemainingTimeAfterCommit);
+  onCommit(root, earliestRemainingTimeAfterCommit); //更新root.expirationTime为earliestRemainingTimeAfterCommit，并将root.finishedWork=null
 
-  if (enableSchedulerTracing) {
+  if (enableSchedulerTracing) {  //polifill相关
     __interactionsRef.current = prevInteractions;
 
     let subscriber;
@@ -1302,7 +1303,7 @@ function renderRoot(
     // that we're in the middle of an async render. Set it to null to indicate
     // there's no more work to be done in the current batch.
     nextRoot = null;
-    onFatal(root);
+    onFatal(root);  //root.finishedWork = null;
     return;
   }
 
@@ -1314,7 +1315,7 @@ function renderRoot(
     const didCompleteRoot = false;
     stopWorkLoopTimer(interruptedBy, didCompleteRoot);
     interruptedBy = null;
-    onYield(root);
+    onYield(root);  //root.finishedWork = null;
     return;
   }
 
@@ -1363,7 +1364,7 @@ function renderRoot(
     ) {
       root.didError = true;
       const suspendedExpirationTime = (root.nextExpirationTimeToWorkOn = expirationTime);
-      const rootExpirationTime = (root.expirationTime = Sync);
+      const rootExpirationTime = (root.expirationTime = Sync);  //强制修改expirationTime为Sync，否则大多数情况下root.expirationTime=root.childExpirationTime
       onSuspend(
         root,
         rootWorkInProgress,
@@ -2276,7 +2277,7 @@ function performWorkOnRoot(
       }
       const isYieldy = false; //isYieldy任务是否可以中断，处于deadline === null || isExpired下不可中断即isYieldy = false
       renderRoot(root, isYieldy, isExpired);
-      finishedWork = root.finishedWork;
+      finishedWork = root.finishedWork;  //不中断、不出错root.finishedWork才有值否则为null
       if (finishedWork !== null) {
         // We've completed the root. Commit it.
         completeRoot(root, finishedWork, expirationTime);
