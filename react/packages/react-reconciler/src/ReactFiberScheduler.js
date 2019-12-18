@@ -680,7 +680,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {  //commitRoot�
     let didError = false;
     let error;
     if (__DEV__) {
-      invokeGuardedCallback(  //
+      invokeGuardedCallback(  //开发时使用的方法-唯一开发环境下需了解的，如下非开发环境用try catch而这个方法在执行函数传参的同时会收集错误
         null,
         commitAllLifeCycles,
         null,

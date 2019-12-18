@@ -20,7 +20,7 @@ let invokeGuardedCallbackImpl = function<A, B, C, D, E, F, Context>(
   e: E,
   f: F,
 ) {
-  const funcArgs = Array.prototype.slice.call(arguments, 3);
+  const funcArgs = Array.prototype.slice.call(arguments, 3);  //获取a-f参数数组
   try {
     func.apply(context, funcArgs);
   } catch (error) {
@@ -108,7 +108,7 @@ if (__DEV__) {
       // Create an event handler for our fake event. We will synchronously
       // dispatch our fake event using `dispatchEvent`. Inside the handler, we
       // call the user-provided callback.
-      const funcArgs = Array.prototype.slice.call(arguments, 3);
+      const funcArgs = Array.prototype.slice.call(arguments, 3); //从3开始截取
       function callCallback() {
         // We immediately remove the callback from event listeners so that
         // nested `invokeGuardedCallback` calls do not clash. Otherwise, a
@@ -127,7 +127,7 @@ if (__DEV__) {
           window.event = windowEvent;
         }
 
-        func.apply(context, funcArgs);
+        func.apply(context, funcArgs); //调用func并传入参数funcArgs
         didError = false;
       }
 
@@ -147,10 +147,10 @@ if (__DEV__) {
       let didSetError = false;
       let isCrossOriginError = false;
 
-      function handleWindowError(event) {
+      function handleWindowError(event) { //传给onerror方法的：window.addEventListener("error", handleWindowError)
         error = event.error;
         didSetError = true;
-        if (error === null && event.colno === 0 && event.lineno === 0) {
+        if (error === null && event.colno === 0 && event.lineno === 0) { //error事件正常可以拿到报错的列和行，跨域时获取不到外站脚本的错误
           isCrossOriginError = true;
         }
         if (event.defaultPrevented) {
@@ -177,7 +177,7 @@ if (__DEV__) {
       // Synchronously dispatch our fake event. If the user-provided function
       // errors, it will trigger our global error handler.
       evt.initEvent(evtType, false, false);
-      fakeNode.dispatchEvent(evt);
+      fakeNode.dispatchEvent(evt); //执行自定义事件
 
       if (windowEventDescriptor) {
         Object.defineProperty(window, 'event', windowEventDescriptor);
@@ -210,7 +210,7 @@ if (__DEV__) {
       window.removeEventListener('error', handleWindowError);
     };
 
-    invokeGuardedCallbackImpl = invokeGuardedCallbackDev;
+    invokeGuardedCallbackImpl = invokeGuardedCallbackDev;  //开发环境下执行的是invokeGuardedCallbackDev
   }
 }
 
