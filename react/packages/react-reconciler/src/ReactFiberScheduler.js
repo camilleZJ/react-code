@@ -384,11 +384,11 @@ function commitAllHostEffects() {
 
     const effectTag = nextEffect.effectTag;
 
-    if (effectTag & ContentReset) {
-      commitResetTextContent(nextEffect);
+    if (effectTag & ContentReset) { //文字节点=》重置内容即可
+      commitResetTextContent(nextEffect); //node=nextEffect.stateNode, node.textContent = '';
     }
 
-    if (effectTag & Ref) {
+    if (effectTag & Ref) { //ref
       const current = nextEffect.alternate;
       if (current !== null) {
         commitDetachRef(current);
@@ -399,36 +399,36 @@ function commitAllHostEffects() {
     // updates, and deletions. To avoid needing to add a case for every
     // possible bitmap value, we remove the secondary effects from the
     // effect tag and switch on that value.
-    let primaryEffectTag = effectTag & (Placement | Update | Deletion);
+    let primaryEffectTag = effectTag & (Placement | Update | Deletion); //Placement-新增节点 Update-更新原有节点 Deletion-删除节点，&一个|的集合=》偶一个或几个
     switch (primaryEffectTag) {
-      case Placement: {
+      case Placement: { //新增-插入
         commitPlacement(nextEffect);
         // Clear the "placement" from effect tag so that we know that this is inserted, before
         // any life-cycles like componentDidMount gets called.
         // TODO: findDOMNode doesn't rely on this any more but isMounted
         // does and isMounted is deprecated anyway so we should be able
         // to kill this.
-        nextEffect.effectTag &= ~Placement;
+        nextEffect.effectTag &= ~Placement; //节点已插入，在所有生命周期方法调用之前effectTag去掉Placement
         break;
       }
-      case PlacementAndUpdate: {
-        // Placement
-        commitPlacement(nextEffect);
+      case PlacementAndUpdate: {  //有Placement和Update：原有节点位置与sibling发生了交换
+        // Placement 
+        commitPlacement(nextEffect); //插入过程
         // Clear the "placement" from effect tag so that we know that this is inserted, before
         // any life-cycles like componentDidMount gets called.
-        nextEffect.effectTag &= ~Placement;
+        nextEffect.effectTag &= ~Placement; //effectTag去掉Placement
 
         // Update
         const current = nextEffect.alternate;
-        commitWork(current, nextEffect);
+        commitWork(current, nextEffect); //update过程
         break;
       }
-      case Update: {
+      case Update: { //属性变化-更新
         const current = nextEffect.alternate;
         commitWork(current, nextEffect);
         break;
       }
-      case Deletion: {
+      case Deletion: { //删除
         commitDeletion(nextEffect);
         break;
       }
@@ -441,17 +441,19 @@ function commitAllHostEffects() {
   }
 }
 
-function commitBeforeMutationLifecycles() {
+function commitBeforeMutationLifecycles() { //获取快照
   while (nextEffect !== null) {
     if (__DEV__) {
-      ReactCurrentFiber.setCurrentFiber(nextEffect);
+      ReactCurrentFiber.setCurrentFiber(nextEffect); //全局变量current = fiber;
     }
 
     const effectTag = nextEffect.effectTag;
     if (effectTag & Snapshot) {
       recordEffect();
+
+      //以下才是循环处理effect链的目的：主要操作就是对比classComponent有effectTag为Snapshot就获取快照snapshot并挂在到instance上
       const current = nextEffect.alternate;
-      commitBeforeMutationLifeCycles(current, nextEffect);
+      commitBeforeMutationLifeCycles(current, nextEffect); //引用外部文件的该函数，与所在函数只是同名
     }
 
     // Don't cleanup effects yet;
@@ -460,7 +462,7 @@ function commitBeforeMutationLifecycles() {
   }
 
   if (__DEV__) {
-    ReactCurrentFiber.resetCurrentFiber();
+    ReactCurrentFiber.resetCurrentFiber(); //全局变量current = null;
   }
 }
 
@@ -580,7 +582,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {  //commitRoot�
   } else {
     // There is no effect on the root.
     firstEffect = finishedWork.firstEffect;
-  }
+  } //renderRoot阶段可知有effectTag的fiber会添加到其父级的effect链上，再把这个链一层一层往父级上挂，所以finishedWork的effect链只包含了其children的fiber，不包含其自己的，所以此处将finishedWork fiber添加到effect链的最后
 
   prepareForCommit(root.containerInfo);
 
@@ -598,7 +600,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {  //commitRoot�
       }
     } else {
       try {
-        commitBeforeMutationLifecycles(); //调用classComponent上的生命周期方法
+        commitBeforeMutationLifecycles(); //处理effect上fiber.tag=classComponent的节点effectTag有snapshot的，创建快照并通过属性instance.__reactInternalSnapshotBeforeUpdate挂载到对应fiber的instance上
       } catch (e) {
         didError = true;
         error = e;
@@ -612,8 +614,8 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {  //commitRoot�
       );
       captureCommitPhaseError(nextEffect, error);
       // Clean-up
-      if (nextEffect !== null) {
-        nextEffect = nextEffect.nextEffect;
+      if (nextEffect !== null) {//nextEffect是一个全局变量，上面拿到第一个effect进入commitBeforeMutationLifecycles，从这个第一个开始循环处理effect链中的effect，处理过程中出错，那么此时的全局变量nextEffect就是出错那个，下面有获取了nextEffect的下一项就跳过这个出错的继续向下执行commitBeforeMutationLifecycles
+        nextEffect = nextEffect.nextEffect; //当前effect处理出错，就继续处理effect中的下一个effect
       }
     }
   }

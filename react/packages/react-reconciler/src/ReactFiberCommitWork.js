@@ -212,7 +212,7 @@ function commitBeforeMutationLifeCycles(
               );
             }
           }
-          instance.__reactInternalSnapshotBeforeUpdate = snapshot;
+          instance.__reactInternalSnapshotBeforeUpdate = snapshot; //把快照挂载到instance上，之后通过instance获取可以进行对比
           stopPhaseTimer();
         }
       }
@@ -685,12 +685,12 @@ function getHostSibling(fiber: Fiber): ?Instance {
 }
 
 function commitPlacement(finishedWork: Fiber): void {
-  if (!supportsMutation) {
+  if (!supportsMutation) { //react dom下supportsMutation=true不会进入
     return;
   }
 
   // Recursively insert all host nodes into the parent.
-  const parentFiber = getHostParentFiber(finishedWork);
+  const parentFiber = getHostParentFiber(finishedWork);//找到第一个父节点上的hostComponent
 
   // Note: these two variables *must* always be updated together.
   let parent;
@@ -702,7 +702,7 @@ function commitPlacement(finishedWork: Fiber): void {
       isContainer = false;
       break;
     case HostRoot:
-      parent = parentFiber.stateNode.containerInfo;
+      parent = parentFiber.stateNode.containerInfo; //对应的container dom节点
       isContainer = true;
       break;
     case HostPortal:
@@ -942,7 +942,7 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
 }
 
 function commitResetTextContent(current: Fiber) {
-  if (!supportsMutation) {
+  if (!supportsMutation) { //reactDom下supportsMutation=true，不会进来
     return;
   }
   resetTextContent(current.stateNode);

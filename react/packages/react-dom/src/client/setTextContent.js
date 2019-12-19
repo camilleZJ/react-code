@@ -26,12 +26,12 @@ let setTextContent = function(node: Element, text: string): void {
       firstChild &&
       firstChild === node.lastChild &&
       firstChild.nodeType === TEXT_NODE
-    ) {
+    ) { //node下只有文字节点没有其他类型节点才会替换nodeValue
       firstChild.nodeValue = text;
       return;
     }
   }
-  node.textContent = text;
+  node.textContent = text;  //text=''走这个
 };
 
 export default setTextContent;

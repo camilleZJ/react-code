@@ -124,7 +124,7 @@ if (__DEV__) {
           typeof window.event !== 'undefined' &&
           window.hasOwnProperty('event')
         ) {
-          window.event = windowEvent;
+          window.event = windowEvent; //兼容处理
         }
 
         func.apply(context, funcArgs); //调用func并传入参数funcArgs
@@ -171,22 +171,22 @@ if (__DEV__) {
       const evtType = `react-${name ? name : 'invokeguardedcallback'}`;
 
       // Attach our event handlers
-      window.addEventListener('error', handleWindowError);
+      window.addEventListener('error', handleWindowError); //执行callCallback报错触发error事件就会执行handleWindowError
       fakeNode.addEventListener(evtType, callCallback, false);
 
       // Synchronously dispatch our fake event. If the user-provided function
       // errors, it will trigger our global error handler.
-      evt.initEvent(evtType, false, false);
-      fakeNode.dispatchEvent(evt); //执行自定义事件
+      evt.initEvent(evtType, false, false); 
+      fakeNode.dispatchEvent(evt); //执行自定义事件，触发了callCallback，若是callCallback执行过程中报错那么上面监听的onerror事件会触发
 
       if (windowEventDescriptor) {
         Object.defineProperty(window, 'event', windowEventDescriptor);
       }
 
-      if (didError) {
-        if (!didSetError) {
+      if (didError) { //callback执行过程中出错
+        if (!didSetError) { //handleWindowError没有执行到，error信息没有设置成功，新建error
           // The callback errored, but the error event never fired.
-          error = new Error(
+          error = new Error( //以上error即使没有设置成功，此处也收集到了错误 防止浏览器调试工具"Pause on exceptions'Pause了程序的运行也会收集到错误
             'An error was thrown inside one of your components, but React ' +
               "doesn't know what it was. This is likely due to browser " +
               'flakiness. React does its best to preserve the "Pause on ' +
@@ -203,14 +203,14 @@ if (__DEV__) {
               'See https://fb.me/react-crossorigin-error for more information.',
           );
         }
-        this.onError(error);
+        this.onError(error); //didSetError、!didSetError、isCrossOriginError
       }
 
       // Remove our event listeners
       window.removeEventListener('error', handleWindowError);
     };
 
-    invokeGuardedCallbackImpl = invokeGuardedCallbackDev;  //开发环境下执行的是invokeGuardedCallbackDev
+    invokeGuardedCallbackImpl = invokeGuardedCallbackDev;  //开发环境下执行的是invokeGuardedCallbackDev，而不是直接采用上面的try catch来收集错误
   }
 }
 
