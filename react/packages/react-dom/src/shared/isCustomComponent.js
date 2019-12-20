@@ -7,9 +7,9 @@
  * @flow
  */
 
-function isCustomComponent(tagName: string, props: Object) {
+function isCustomComponent(tagName: string, props: Object) { //注意以下满足CustomComponent条件
   if (tagName.indexOf('-') === -1) {
-    return typeof props.is === 'string';
+    return typeof props.is === 'string'; //typeof props.is是否是字符串
   }
   switch (tagName) {
     // These are reserved SVG and MathML elements.

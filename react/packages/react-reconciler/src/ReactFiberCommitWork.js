@@ -642,7 +642,7 @@ function isHostParent(fiber: Fiber): boolean {
   );
 }
 
-function getHostSibling(fiber: Fiber): ?Instance {
+function getHostSibling(fiber: Fiber): ?Instance {  //获取before，并不是要插入位置前面的那个节点，而是找在哪个节点之前插入即insertBefore，而且找的是子节点中第一个dom节点，即找的是在哪个dom（hostComponent、text节点）之前插入
   // We're going to search forward into the tree until we find a sibling host
   // node. Unfortunately, if multiple insertions are done in a row we have to
   // search past them. This leads to exponential search for the next sibling.
@@ -650,7 +650,7 @@ function getHostSibling(fiber: Fiber): ?Instance {
   let node: Fiber = fiber;
   siblings: while (true) {
     // If we didn't find anything, let's try the next sibling.
-    while (node.sibling === null) {
+    while (node.sibling === null) { //找其sibling，若是没有就向上找父元素的sibling
       if (node.return === null || isHostParent(node.return)) {
         // If we pop out of the root or hit the parent the fiber we are the
         // last sibling.
@@ -659,8 +659,9 @@ function getHostSibling(fiber: Fiber): ?Instance {
       node = node.return;
     }
     node.sibling.return = node.return;
-    node = node.sibling;
-    while (node.tag !== HostComponent && node.tag !== HostText) {
+    node = node.sibling; //node有sibling，就取出sibling
+    //此循环只是在其sibling兄弟节点树中找第一个dom（HostComponent、HostText）且没有Placement effectTag的节点
+    while (node.tag !== HostComponent && node.tag !== HostText) { //不是需要真正渲染的节点（需要插入dom操作的节点），最终真正渲染的只有：HostComponent、HostText
       // If it is not host node and, we might have a host node inside it.
       // Try to search down until we find one.
       if (node.effectTag & Placement) {
@@ -669,11 +670,11 @@ function getHostSibling(fiber: Fiber): ?Instance {
       }
       // If we don't have a child, try the siblings instead.
       // We also skip portals because they are not part of this host tree.
-      if (node.child === null || node.tag === HostPortal) {
+      if (node.child === null || node.tag === HostPortal) { //HostPortal的内容不能作为子元素这部分内容是需要插入到portal容器中的
         continue siblings;
       } else {
         node.child.return = node;
-        node = node.child;
+        node = node.child; //从sibling子树中向下找child
       }
     }
     // Check if this host node is stable or about to be placed.
@@ -690,7 +691,7 @@ function commitPlacement(finishedWork: Fiber): void {
   }
 
   // Recursively insert all host nodes into the parent.
-  const parentFiber = getHostParentFiber(finishedWork);//找到第一个父节点上的hostComponent
+  const parentFiber = getHostParentFiber(finishedWork);//从当前节点开始一层层取return父元素，返回第一个父节点为fiber.tag=HostComponent || HostRoot || HostPortal
 
   // Note: these two variables *must* always be updated together.
   let parent;
@@ -698,7 +699,7 @@ function commitPlacement(finishedWork: Fiber): void {
 
   switch (parentFiber.tag) {
     case HostComponent:
-      parent = parentFiber.stateNode;
+      parent = parentFiber.stateNode; //容器dom节点
       isContainer = false;
       break;
     case HostRoot:
@@ -716,45 +717,45 @@ function commitPlacement(finishedWork: Fiber): void {
           'in React. Please file an issue.',
       );
   }
-  if (parentFiber.effectTag & ContentReset) {
+  if (parentFiber.effectTag & ContentReset) { //文本节点更新之前reset文本内容
     // Reset the text content of the parent before doing any insertions
     resetTextContent(parent);
     // Clear ContentReset from the effect tag
     parentFiber.effectTag &= ~ContentReset;
   }
 
-  const before = getHostSibling(finishedWork);
+  const before = getHostSibling(finishedWork); //其子树或没有子树向上找第一个父级的子树中遍历child找到第一个dom（HostComponent、HostText）且没有Placement effectTag的节点，若是单个节点可能没有before即为null，祖师before不是fiber对象了而是fiber.stateNode
   // We only have the top Fiber that was inserted but we need recurse down its
   // children to find all the terminal nodes.
   let node: Fiber = finishedWork;
   while (true) {
-    if (node.tag === HostComponent || node.tag === HostText) {
+    if (node.tag === HostComponent || node.tag === HostText) { //只有这两种情况需要真正插入dom
       if (before) {
         if (isContainer) {
-          insertInContainerBefore(parent, node.stateNode, before);
+          insertInContainerBefore(parent, node.stateNode, before);  //与下面区别就是排除注释节点，注释节点的话父元素取其parentNode：(parent.parentNode).insertBefore(node.stateNode, before)
         } else {
-          insertBefore(parent, node.stateNode, before);
+          insertBefore(parent, node.stateNode, before); //parent.insertBefore(node.stateNode, before)
         }
-      } else {
+      } else { //单个节点采用appendChild
         if (isContainer) {
-          appendChildToContainer(parent, node.stateNode);
+          appendChildToContainer(parent, node.stateNode); //判断parent.nodeType是否为COMMENT_NODE，是-取parentNode并调用insertBefore，将node.stateNode插入到注释节点之前
         } else {
-          appendChild(parent, node.stateNode);
+          appendChild(parent, node.stateNode); //parent。appendChild(node.stateNode)
         }
       }
-    } else if (node.tag === HostPortal) {
+    } else if (node.tag === HostPortal) { //这个是要插入到portal容器内的而不是root中，所以此处不需要处理其children
       // If the insertion itself is a portal, then we don't want to traverse
       // down its children. Instead, we'll get insertions from each child in
       // the portal directly.
-    } else if (node.child !== null) {
+    } else if (node.child !== null) {  //把子树的所有节点都进行插入操作
       node.child.return = node;
-      node = node.child;
+      node = node.child; //不是正真需要插入的节点就向下遍历child，需要插入的执行插入操作，不需要的就跳过向下遍历
       continue;
     }
-    if (node === finishedWork) {
+    if (node === finishedWork) { //没有child，单个节点处理完成
       return;
-    }
-    while (node.sibling === null) {
+    } 
+    while (node.sibling === null) { //classComponent插入子节点，子节点可能是一个数组，数组中都是sibling，对于这些sibling也需要插入节点操作
       if (node.return === null || node.return === finishedWork) {
         return;
       }
@@ -868,7 +869,7 @@ function commitDeletion(current: Fiber): void {
 }
 
 function commitWork(current: Fiber | null, finishedWork: Fiber): void {
-  if (!supportsMutation) {
+  if (!supportsMutation) { //react dom下supportsMutation=true不会进来
     commitContainer(finishedWork);
     return;
   }
@@ -877,8 +878,8 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
     case ClassComponent: {
       return;
     }
-    case HostComponent: {
-      const instance: Instance = finishedWork.stateNode;
+    case HostComponent: { //和dom操作相关的之后两种类型的tag：HostComponent、HostText
+      const instance: Instance = finishedWork.stateNode; //completeWork阶段创建的dom元素
       if (instance != null) {
         // Commit the work prepared earlier.
         const newProps = finishedWork.memoizedProps;
@@ -888,7 +889,7 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
         const oldProps = current !== null ? current.memoizedProps : newProps;
         const type = finishedWork.type;
         // TODO: Type the updateQueue to be specific to host components.
-        const updatePayload: null | UpdatePayload = (finishedWork.updateQueue: any);
+        const updatePayload: null | UpdatePayload = (finishedWork.updateQueue: any); //completeWork阶段:workInProgress.updateQueue = updatePayload（updatePayload=prepareUpdate(...)对比新旧属性，按照key如style等属性存如的数组）
         finishedWork.updateQueue = null;
         if (updatePayload !== null) {
           commitUpdate(
