@@ -409,7 +409,7 @@ export function removeChildFromContainer(
   container: Container,
   child: Instance | TextInstance,
 ): void {
-  if (container.nodeType === COMMENT_NODE) {
+  if (container.nodeType === COMMENT_NODE) {  //注释节点没有子节点即没能当容器
     (container.parentNode: any).removeChild(child);
   } else {
     container.removeChild(child);

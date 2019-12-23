@@ -586,33 +586,36 @@ export function commitUpdateQueue<State>(
   // lower priority updates left over, we need to keep the captured updates
   // in the queue so that they are rebased and not dropped once we process the
   // queue again at the lower priority.
-  if (finishedQueue.firstCapturedUpdate !== null) {
+  // 如果有低优先级的任务，则让本次渲染捕获的更新放到低优先级的任务上渲染
+  // 这里的假设是当前节点上低优先级的任务可能可以处理捕获的任务
+  // 如果没有低优先级的任务，则清除本次捕获的更新
+  if (finishedQueue.firstCapturedUpdate !== null) { //renderRoot阶段出错创建的error updateQueue
     // Join the captured update list to the end of the normal list.
-    if (finishedQueue.lastUpdate !== null) {
+    if (finishedQueue.lastUpdate !== null) { 
       finishedQueue.lastUpdate.next = finishedQueue.firstCapturedUpdate;
       finishedQueue.lastUpdate = finishedQueue.lastCapturedUpdate;
     }
     // Clear the list of captured updates.
     finishedQueue.firstCapturedUpdate = finishedQueue.lastCapturedUpdate = null;
-  }
+  } //用意：对于被捕获的错误，如果在本次渲染周期内无法被处理，那么若是这个组件上还有低优先级的更新就放倒更新队列最后，看是否能在低优先级更新任务上被处理，若是没有低优先级的任务，那么本次捕获的错误就清空不再本次渲染处理，以防影响之后产生的更新
 
   // Commit the effects
-  commitUpdateEffects(finishedQueue.firstEffect, instance);
+  commitUpdateEffects(finishedQueue.firstEffect, instance); //从firstEffect遍历effect，处理每层effect.callback，之后置空
   finishedQueue.firstEffect = finishedQueue.lastEffect = null;
 
-  commitUpdateEffects(finishedQueue.firstCapturedEffect, instance);
+  commitUpdateEffects(finishedQueue.firstCapturedEffect, instance); //unwindWork中对于捕获的错误创建了update，并且设置了update.callback=function callback(内部执行了componentDidCatch)
   finishedQueue.firstCapturedEffect = finishedQueue.lastCapturedEffect = null;
 }
 
-function commitUpdateEffects<State>(
+function commitUpdateEffects<State>( //this.setState({...}, cb: ()=>{})以下执行的就是第二个参数callback，执行的时候update更新已完成state已经改变
   effect: Update<State> | null,
   instance: any,
 ): void {
-  while (effect !== null) {
+  while (effect !== null) { //执行effect链上所有的callback，处理完清空null
     const callback = effect.callback;
     if (callback !== null) {
       effect.callback = null;
-      callCallback(callback, instance);
+      callCallback(callback, instance); //callback.call(instance);
     }
     effect = effect.nextEffect;
   }

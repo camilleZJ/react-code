@@ -260,7 +260,7 @@ function commitLifeCycles(
           instance.componentDidUpdate(
             prevProps,
             prevState,
-            instance.__reactInternalSnapshotBeforeUpdate,
+            instance.__reactInternalSnapshotBeforeUpdate,  //commitRoot第一个循环生成的快照
           );
           stopPhaseTimer();
         }
@@ -279,20 +279,20 @@ function commitLifeCycles(
       return;
     }
     case HostRoot: {
-      const updateQueue = finishedWork.updateQueue;
+      const updateQueue = finishedWork.updateQueue; //只有reactDom.render时才会创建update
       if (updateQueue !== null) {
         let instance = null;
         if (finishedWork.child !== null) {
           switch (finishedWork.child.tag) {
-            case HostComponent:
-              instance = getPublicInstance(finishedWork.child.stateNode);
+            case HostComponent: //instance就是HostComponent的dom节点
+              instance = getPublicInstance(finishedWork.child.stateNode); // 获取全局变量：return instance;
               break;
             case ClassComponent:
               instance = finishedWork.child.stateNode;
               break;
           }
         }
-        commitUpdateQueue(
+        commitUpdateQueue( //和上面一样执行updateQueue中的callback
           finishedWork,
           updateQueue,
           instance,
@@ -308,10 +308,10 @@ function commitLifeCycles(
       // (eg DOM renderer may schedule auto-focus for inputs and form controls).
       // These effects should only be committed when components are first mounted,
       // aka when there is no current/alternate.
-      if (current === null && finishedWork.effectTag & Update) {
+      if (current === null && finishedWork.effectTag & Update) { //获取焦点处理前提是current === null也就是只有初次渲染的时候才会获取焦点
         const type = finishedWork.type;
         const props = finishedWork.memoizedProps;
-        commitMount(instance, type, props, finishedWork);
+        commitMount(instance, type, props, finishedWork); //对于input、select、button、textarea设置了autoFocus，就focus获取焦点
       }
 
       return;
@@ -497,15 +497,15 @@ function commitUnmount(current: Fiber): void {
 
   switch (current.tag) {
     case ClassComponent: {
-      safelyDetachRef(current);
+      safelyDetachRef(current); //卸载ref
       const instance = current.stateNode;
       if (typeof instance.componentWillUnmount === 'function') {
-        safelyCallComponentWillUnmount(current, instance);
+        safelyCallComponentWillUnmount(current, instance); //调用声明周期方法：ComponentWillUnmount
       }
       return;
     }
     case HostComponent: {
-      safelyDetachRef(current);
+      safelyDetachRef(current);  //卸载ref
       return;
     }
     case HostPortal: {
@@ -513,7 +513,7 @@ function commitUnmount(current: Fiber): void {
       // We are also not using this parent because
       // the portal will get pushed immediately.
       if (supportsMutation) {
-        unmountHostComponents(current);
+        unmountHostComponents(current); //又递归回去了
       } else if (supportsPersistence) {
         emptyPortalContainer(current);
       }
@@ -529,8 +529,8 @@ function commitNestedUnmounts(root: Fiber): void {
   // composites before this host node is removed from the tree. Therefore
   // we do an inner loop while we're still inside the host node.
   let node: Fiber = root;
-  while (true) {
-    commitUnmount(node);
+  while (true) {  //从node开始遍历node及node以下子树child，下面的sibling是node以下这个子树种有分叉子树，就是对node开始的这棵树遍历所有节点都去执行commitUnmount
+    commitUnmount(node); //卸载ref、执行生命周期函数ComponentWillUnmount等操作
     // Visit children because they may contain more composite or host nodes.
     // Skip portals because commitUnmount() currently visits them recursively.
     if (
@@ -538,7 +538,7 @@ function commitNestedUnmounts(root: Fiber): void {
       // If we use mutation we drill down into portals using commitUnmount above.
       // If we don't use mutation we drill down into portals here instead.
       (!supportsMutation || node.tag !== HostPortal)
-    ) {
+    ) { //此循环中root子树中可能有Portal节点：对于该节点执行commitUnmount，不满足该if条件即child处理是在commitUnmount中Portal节点递归调用了unmountHostComponents处理child，Portal组件不在此处处理child但是以下的非Portal的sibling还是会处理的
       node.child.return = node;
       node = node.child;
       continue;
@@ -782,7 +782,7 @@ function unmountHostComponents(current): void {
   while (true) {
     if (!currentParentIsValid) {
       let parent = node.return;
-      findParent: while (true) {
+      findParent: while (true) { //第一个while循环找ParentContainer
         invariant(
           parent !== null,
           'Expected to find a host parent. This error is likely caused by ' +
@@ -807,14 +807,15 @@ function unmountHostComponents(current): void {
       currentParentIsValid = true;
     }
 
-    if (node.tag === HostComponent || node.tag === HostText) {
+    //深度优先遍历算法
+    if (node.tag === HostComponent || node.tag === HostText) { //真正需要操作DOM的节点
       commitNestedUnmounts(node);
       // After all the children have unmounted, it is now safe to remove the
       // node from the tree.
-      if (currentParentIsContainer) {
-        removeChildFromContainer((currentParent: any), node.stateNode);
+      if (currentParentIsContainer) { //从node开始整颗子树都可以删除处理
+        removeChildFromContainer((currentParent: any), node.stateNode); //从父节点内部删除子节点
       } else {
-        removeChild((currentParent: any), node.stateNode);
+        removeChild((currentParent: any), node.stateNode); //直接删除父节点
       }
       // Don't visit children because we already visited them.
     } else if (node.tag === HostPortal) {
@@ -837,14 +838,14 @@ function unmountHostComponents(current): void {
         continue;
       }
     }
-    if (node === current) {
+    if (node === current) {  //遍历子树，若是又回来node=current说明遍历完了
       return;
-    }
-    while (node.sibling === null) {
+    }  //此if和下面的循环意思：从node开始处理，若是node.tag类型为操作DOM的类型：处理整棵树-满足if跳出 ，若不是遍历node这个子树，不会遇到这个if处理node以下节点包括这个节点以下还有的子树-下面的while循环，整棵树遍历完成又会回到node，此时return跳出循环
+    while (node.sibling === null) { //一侧子树遍历完成，才会遍历另一个子树sibling
       if (node.return === null || node.return === current) {
         return;
       }
-      node = node.return;
+      node = node.return; //不断向上找sibling，直到node === current跳出循环
       if (node.tag === HostPortal) {
         // When we go out of the portal, we need to restore the parent.
         // Since we don't keep a stack of them, we will search for it.
@@ -857,7 +858,7 @@ function unmountHostComponents(current): void {
 }
 
 function commitDeletion(current: Fiber): void {
-  if (supportsMutation) {
+  if (supportsMutation) { //react dom走这个
     // Recursively delete all host nodes from the parent.
     // Detach refs and call componentWillUnmount() on the whole subtree.
     unmountHostComponents(current);

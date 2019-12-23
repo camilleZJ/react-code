@@ -478,10 +478,10 @@ function commitAllLifeCycles(
       ReactStrictModeWarnings.flushPendingDeprecationWarnings();
     }
   }
-  while (nextEffect !== null) {
+  while (nextEffect !== null) {  //root.finishedWork effect链上的第一项firstEffect
     const effectTag = nextEffect.effectTag;
 
-    if (effectTag & (Update | Callback)) {
+    if (effectTag & (Update | Callback)) {  //effectTag为Update或Callback
       recordEffect();
       const current = nextEffect.alternate;
       commitLifeCycles(
