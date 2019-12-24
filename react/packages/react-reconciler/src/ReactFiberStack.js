@@ -15,15 +15,15 @@ export type StackCursor<T> = {
   current: T,
 };
 
-const valueStack: Array<any> = [];
+const valueStack: Array<any> = []; //很重要的变量
 
-let fiberStack: Array<Fiber | null>;
+let fiberStack: Array<Fiber | null>; //如下只是用于开发环境下，可忽略
 
 if (__DEV__) {
   fiberStack = [];
 }
 
-let index = -1;
+let index = -1; //valueStack中目前存数据存贮到的位置
 
 function createCursor<T>(defaultValue: T): StackCursor<T> {
   return {
@@ -36,7 +36,7 @@ function isEmpty(): boolean {
 }
 
 function pop<T>(cursor: StackCursor<T>, fiber: Fiber): void {
-  if (index < 0) {
+  if (index < 0) { //栈是空的
     if (__DEV__) {
       warningWithoutStack(false, 'Unexpected pop.');
     }
@@ -49,6 +49,8 @@ function pop<T>(cursor: StackCursor<T>, fiber: Fiber): void {
     }
   }
 
+  //问题：[a, b, c] =》 c1, c2, c3，pop值得时候：想要拿c1的pop出来的确是c3的
+  //这个问题react中没解决因为react显示入栈再出栈，在代码中保持出栈对应的顺序，而不是在此文件中控制
   cursor.current = valueStack[index];
 
   valueStack[index] = null;
@@ -69,7 +71,7 @@ function push<T>(cursor: StackCursor<T>, value: T, fiber: Fiber): void {
     fiberStack[index] = fiber;
   }
 
-  cursor.current = value;
+  cursor.current = value; //注意push时是把cursor之前的值入栈，当前的值不入栈只是存在如cursor中
 }
 
 function checkThatStackIsEmpty() {
