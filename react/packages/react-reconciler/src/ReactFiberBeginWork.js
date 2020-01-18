@@ -514,10 +514,10 @@ function finishClassComponent(
 
   const didCaptureError = (workInProgress.effectTag & DidCapture) !== NoEffect;  //判断workInProgress.effectTag上是否有DidCapture，以上流程有错误就会在effectTag上添加DidCapture
 
-  if (!shouldUpdate && !didCaptureError) {
+  if (!shouldUpdate && !didCaptureError) { //不需要更新
     // Context providers should defer to sCU for rendering
-    if (hasContext) {
-      invalidateContextProvider(workInProgress, Component, false);
+    if (hasContext) { //updateClassComponent里遇到旧的context API就会设置此值为true
+      invalidateContextProvider(workInProgress, Component, false); //不需要更新情况下，DidChange为false
     }
 
     return bailoutOnAlreadyFinishedWork(  //跳过更新
@@ -1315,13 +1315,13 @@ function updateContextProvider(
   workInProgress: Fiber,
   renderExpirationTime: ExpirationTime,
 ) {
-  const providerType: ReactProviderType<any> = workInProgress.type;
-  const context: ReactContext<any> = providerType._context;
+  const providerType: ReactProviderType<any> = workInProgress.type;  //createContext返回的Provider对象
+  const context: ReactContext<any> = providerType._context; //createContext APi中Provider对象中_context挂载的是当前的context对象，这个context对象就是Consumer
 
   const newProps = workInProgress.pendingProps;
   const oldProps = workInProgress.memoizedProps;
 
-  const newValue = newProps.value;
+  const newValue = newProps.value;  //Provider组件上value属性提供值：props.value
 
   if (__DEV__) {
     const providerPropTypes = workInProgress.type.propTypes;
@@ -1503,7 +1503,7 @@ function beginWork(
     const newProps = workInProgress.pendingProps;
     if (
       oldProps === newProps &&  //更新先后属性没变
-      !hasLegacyContextChanged() && //老的Context相关，很浪费性能
+      !hasLegacyContextChanged() && //老的Context相关，很浪费性能如下该if条件内的所有类型组件的是否能跳过本次更新都受这个context影响，所以说旧的context影响这个子树的更新
       (updateExpirationTime === NoWork ||  //没有更新任务
         updateExpirationTime > renderExpirationTime) //更新的优先级不是最高
     ) { //优化点：以上条件可以跳出本次更新
@@ -1520,7 +1520,7 @@ function beginWork(
           break;
         case ClassComponent: {
           const Component = workInProgress.type;
-          if (isLegacyContextProvider(Component)) {
+          if (isLegacyContextProvider(Component)) { //带有Legacy的都是遗留下来的
             pushLegacyContextProvider(workInProgress);
           }
           break;

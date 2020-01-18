@@ -56,7 +56,7 @@ export function resetContextDependences(): void {
 export function pushProvider<T>(providerFiber: Fiber, nextValue: T): void {
   const context: ReactContext<T> = providerFiber.type._context;
 
-  if (isPrimaryRenderer) {
+  if (isPrimaryRenderer) { //定值，为true
     push(valueCursor, context._currentValue, providerFiber);
 
     context._currentValue = nextValue;
@@ -109,10 +109,10 @@ export function calculateChangedBits<T>(
   // Object.is polyfill.
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
   if (
-    (oldValue === newValue &&
-      (oldValue !== 0 || 1 / oldValue === 1 / (newValue: any))) ||
-    (oldValue !== oldValue && newValue !== newValue) // eslint-disable-line no-self-compare
-  ) {
+    (oldValue === newValue && //适用于大多数情况，如：-0 === +0返回true=》不正确，从二进制位上来说会有一个标志位的不同，以及NaN 应该等于 NaN
+      (oldValue !== 0 || 1 / oldValue === 1 / (newValue: any))) || //+0和-0区分开（+0和-0区分除0）：1 / +0为Infinity正无穷，1 / -0为-Infinity负无穷，除的结果对比来排除+0和-0
+    (oldValue !== oldValue && newValue !== newValue) // eslint-disable-line no-self-compare  排除NaN，正常NaN !== NaN，且NaN也不等于自己
+  ) { //对比oldValue和newValue，利用了polyfill：es6的Object.is()，更准确的判断两个值是否完全相等，满足此条件证明两个值全等
     // No change
     return 0;
   } else {

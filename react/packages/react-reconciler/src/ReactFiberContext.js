@@ -33,9 +33,9 @@ if (__DEV__) {
 }
 
 // A cursor to the current merged context object on the stack.
-let contextStackCursor: StackCursor<Object> = createCursor(emptyContextObject);
+let contextStackCursor: StackCursor<Object> = createCursor(emptyContextObject); //记录当前更新到某个节点之后应该可以拿到的context对应的所有值
 // A cursor to a boolean indicating whether the context has changed.
-let didPerformWorkStackCursor: StackCursor<boolean> = createCursor(false);
+let didPerformWorkStackCursor: StackCursor<boolean> = createCursor(false); //更新到某个节点之后这个context值是否有变化
 // Keep track of the previous context object that was on the stack.
 // We use this to get access to the parent context after we have already
 // pushed the next context provider, and now need to merge their contexts.
@@ -44,16 +44,16 @@ let previousContext: Object = emptyContextObject;
 function getUnmaskedContext(
   workInProgress: Fiber,
   Component: Function,
-  didPushOwnContextIfProvider: boolean,
+  didPushOwnContextIfProvider: boolean,  //是否已经push了自己的context provider--提供context的provider
 ): Object {
   if (didPushOwnContextIfProvider && isContextProvider(Component)) {
     // If the fiber is a context provider itself, when we read its context
     // we may have already pushed its own child context on the stack. A context
     // provider should not "see" its own child context. Therefore we read the
     // previous (parent) context instead for a context provider.
-    return previousContext;
+    return previousContext;  //push之前的cursor.current，context来源于其provider提供的，而不是自己提供的，自己提供的context是给其children用的
   }
-  return contextStackCursor.current;
+  return contextStackCursor.current; 
 }
 
 function cacheContext(
@@ -89,7 +89,7 @@ function getMaskedContext(
 
   const context = {};
   for (let key in contextTypes) {
-    context[key] = unmaskedContext[key];
+    context[key] = unmaskedContext[key]; //provider提供的context中有很多值，但是某个children不一定全用到，只拿出更新的该组件中使用到的context
   }
 
   if (__DEV__) {
@@ -116,19 +116,19 @@ function hasContextChanged(): boolean {
   return didPerformWorkStackCursor.current;
 }
 
-function isContextProvider(type: Function): boolean {
+function isContextProvider(type: Function): boolean { //作为propvider的会有childContextTypes属性
   const childContextTypes = type.childContextTypes;
   return childContextTypes !== null && childContextTypes !== undefined;
 }
 
 function popContext(fiber: Fiber): void {
   pop(didPerformWorkStackCursor, fiber);
-  pop(contextStackCursor, fiber);
+  pop(contextStackCursor, fiber); //注意push的时候先push contextStackCursor再didPerformWorkStackCursor以确保更新的context的顺序(stack中cursor的位置才能使对应起来的)：push的时候按照顺序，pop的时候要反过来
 }
 
 function popTopLevelContextObject(fiber: Fiber): void {
   pop(didPerformWorkStackCursor, fiber);
-  pop(contextStackCursor, fiber);
+  pop(contextStackCursor, fiber); 
 }
 
 function pushTopLevelContextObject(
@@ -156,7 +156,7 @@ function processChildContext(
 
   // TODO (bvaughn) Replace this behavior with an invariant() in the future.
   // It has only been added in Fiber to match the (unintentional) behavior in Stack.
-  if (typeof instance.getChildContext !== 'function') {
+  if (typeof instance.getChildContext !== 'function') { // 没有getChildContext function说明次节点不是context的提供者，那么context的值是其父级的context
     if (__DEV__) {
       const componentName = getComponentName(type) || 'Unknown';
 
@@ -180,7 +180,7 @@ function processChildContext(
     ReactCurrentFiber.setCurrentPhase('getChildContext');
   }
   startPhaseTimer(fiber, 'getChildContext');
-  childContext = instance.getChildContext();
+  childContext = instance.getChildContext(); //调用getChildContext方法获取return的object
   stopPhaseTimer();
   if (__DEV__) {
     ReactCurrentFiber.setCurrentPhase(null);
@@ -209,7 +209,7 @@ function processChildContext(
     );
   }
 
-  return {...parentContext, ...childContext};
+  return {...parentContext, ...childContext}; //parent的context和child的context合并，child放在最后=》后者覆盖前者，即key相同child的context会覆盖parent的context
 }
 
 function pushContextProvider(workInProgress: Fiber): boolean {
@@ -219,17 +219,17 @@ function pushContextProvider(workInProgress: Fiber): boolean {
   // and replace it on the stack later when invalidating the context.
   const memoizedMergedChildContext =
     (instance && instance.__reactInternalMemoizedMergedChildContext) ||
-    emptyContextObject;
+    emptyContextObject;  //通过挂载到instance上的属性来获取context的值
 
   // Remember the parent context so we can merge with it later.
   // Inherit the parent's did-perform-work value to avoid inadvertently blocking updates.
   previousContext = contextStackCursor.current;
-  push(contextStackCursor, memoizedMergedChildContext, workInProgress);
+  push(contextStackCursor, memoizedMergedChildContext, workInProgress); //将contextStackCursor.current入栈valueStack：之后将instance上新的值挂载到contextStackCursor.current上
   push(
     didPerformWorkStackCursor,
     didPerformWorkStackCursor.current,
     workInProgress,
-  );
+  ); //将之前的current入栈，但是当前的current还是等于入栈的值=》保持原样只是同时将此值入了栈valueStack
 
   return true;
 }
@@ -237,7 +237,7 @@ function pushContextProvider(workInProgress: Fiber): boolean {
 function invalidateContextProvider(
   workInProgress: Fiber,
   type: any,
-  didChange: boolean,
+  didChange: boolean,  //context是否有变化
 ): void {
   const instance = workInProgress.stateNode;
   invariant(
@@ -254,15 +254,15 @@ function invalidateContextProvider(
       workInProgress,
       type,
       previousContext,
-    );
-    instance.__reactInternalMemoizedMergedChildContext = mergedContext;
+    ); //计算新的context
+    instance.__reactInternalMemoizedMergedChildContext = mergedContext; //将新的context通过属性挂载到instance上
 
     // Replace the old (or empty) context with the new one.
     // It is important to unwind the context in the reverse order.
     pop(didPerformWorkStackCursor, workInProgress);
-    pop(contextStackCursor, workInProgress);
+    pop(contextStackCursor, workInProgress);  //ReactFiberBeginWork.js-》updateClassComponent：push了此处pop来使cursor.current获取旧值，便于以下push新值
     // Now push the new context and mark that it has changed.
-    push(contextStackCursor, mergedContext, workInProgress);
+    push(contextStackCursor, mergedContext, workInProgress); //cursor.current旧值入栈，并将新的context赋值给cursor.current
     push(didPerformWorkStackCursor, didChange, workInProgress);
   } else {
     pop(didPerformWorkStackCursor, workInProgress);
