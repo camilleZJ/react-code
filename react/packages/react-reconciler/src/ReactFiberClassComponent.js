@@ -978,7 +978,7 @@ function updateClassInstance(
   workInProgress: Fiber,
   ctor: any,
   newProps: any,
-  renderExpirationTime: ExpirationTime,
+  renderExpirationTime: ExpirationTime, 
 ): boolean {
   const instance = workInProgress.stateNode;
 
@@ -986,11 +986,11 @@ function updateClassInstance(
   instance.props = oldProps;
 
   const oldContext = instance.context;
-  const contextType = ctor.contextType;
+  const contextType = ctor.contextType;  //contextType无s是新API组件.contextType = Consumer，该属性存在即使用了新API那么即使这个组件也使用了就属性，也不会再去读就属性
   let nextContext;
-  if (typeof contextType === 'object' && contextType !== null) {
+  if (typeof contextType === 'object' && contextType !== null) { //优先读取新API
     nextContext = readContext(contextType);
-  } else {
+  } else { //没有使用新context API才会读取旧的Context API
     const nextUnmaskedContext = getUnmaskedContext(workInProgress, ctor, true);
     nextContext = getMaskedContext(workInProgress, nextUnmaskedContext);
   }

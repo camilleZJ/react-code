@@ -44,16 +44,16 @@ let previousContext: Object = emptyContextObject;
 function getUnmaskedContext(
   workInProgress: Fiber,
   Component: Function,
-  didPushOwnContextIfProvider: boolean,
+  didPushOwnContextIfProvider: boolean,  //conText的提供者无论更不更新在beginWork或updateClassComponent阶段都会push自己的context
 ): Object {
   if (didPushOwnContextIfProvider && isContextProvider(Component)) {
     // If the fiber is a context provider itself, when we read its context
     // we may have already pushed its own child context on the stack. A context
     // provider should not "see" its own child context. Therefore we read the
     // previous (parent) context instead for a context provider.
-    return previousContext;
+    return previousContext; //若是更新的这个组件是context的provider那么之前在beginWork或updateClassComponent阶段已经push了自己的，返回的是自己的前一个push的context
   }
-  return contextStackCursor.current;
+  return contextStackCursor.current; //不是provider，就不会在beginWork或updateClassComponent阶段push自己的context，所以直接返回cursor当前的context
 }
 
 function cacheContext(
@@ -88,7 +88,7 @@ function getMaskedContext(
   }
 
   const context = {};
-  for (let key in contextTypes) {
+  for (let key in contextTypes) { //获取更新的这个组件实际用到的context的内容，其provider可能提供了value、a，但是该child组件实际只用到了a
     context[key] = unmaskedContext[key];
   }
 
@@ -180,7 +180,7 @@ function processChildContext(
     ReactCurrentFiber.setCurrentPhase('getChildContext');
   }
   startPhaseTimer(fiber, 'getChildContext');
-  childContext = instance.getChildContext();
+  childContext = instance.getChildContext();  //就api中提供context的classComponent中定义的方法，return{context提供的值}
   stopPhaseTimer();
   if (__DEV__) {
     ReactCurrentFiber.setCurrentPhase(null);
@@ -209,7 +209,7 @@ function processChildContext(
     );
   }
 
-  return {...parentContext, ...childContext};
+  return {...parentContext, ...childContext};  //所有provider提供的context值进行合并，注意顺序：key相同时后者覆盖前者
 }
 
 function pushContextProvider(workInProgress: Fiber): boolean {

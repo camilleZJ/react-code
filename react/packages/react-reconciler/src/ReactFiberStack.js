@@ -49,7 +49,7 @@ function pop<T>(cursor: StackCursor<T>, fiber: Fiber): void {
     }
   }
 
-  cursor.current = valueStack[index];
+  cursor.current = valueStack[index];  //push的时候是把老的值入栈，新值挂载到cursor=》pop反过来就是把老的值出栈挂回当前的cursor上
 
   valueStack[index] = null;
 
@@ -63,7 +63,7 @@ function pop<T>(cursor: StackCursor<T>, fiber: Fiber): void {
 function push<T>(cursor: StackCursor<T>, value: T, fiber: Fiber): void {
   index++;
 
-  valueStack[index] = cursor.current;
+  valueStack[index] = cursor.current; //注意：push是把老的值入栈，新值挂载道cursor上
 
   if (__DEV__) {
     fiberStack[index] = fiber;

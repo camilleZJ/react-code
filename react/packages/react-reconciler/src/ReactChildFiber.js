@@ -105,12 +105,12 @@ function coerceRef(
   current: Fiber | null,
   element: ReactElement,
 ) {
-  let mixedRef = element.ref;
+  let mixedRef = element.ref; //元素上会有ref属性：ref="stringRef"、ref={ele => (this.methodRef = ele)}、ref={this.objRef}( this.objRef = React.createRef())
   if (
     mixedRef !== null &&
     typeof mixedRef !== 'function' &&
     typeof mixedRef !== 'object'
-  ) {
+  ) {  //函数式ref和object式ref不需要处理，自己可以处理节点对象挂载到classComponent的this上的过程，此处处理的是string式ref function直接调用即可 object只要获取current实力即可
     if (__DEV__) {
       if (returnFiber.mode & StrictMode) {
         const componentName = getComponentName(returnFiber.type) || 'Component';
@@ -131,7 +131,10 @@ function coerceRef(
       }
     }
 
-    if (element._owner) {
+   // nextChildren = instance.render(); 
+  //render后就会调用React.createElemment，因为ref只能是在classComponent过程中被创建的，因为只有classComponent才有this去挂载ref
+  //所以React.createElemment中reactElemnt中的owner为ReactCurrentOwner.current,即更新中的那个classComponent对应的那个fiber对象
+    if (element._owner) { //classComponent的workInProcess，ReactElement中：owner为ReactCurrentOwner.current,ReactCurrentOwner.current = workInProgress;
       const owner: ?Fiber = (element._owner: any);
       let inst;
       if (owner) {
@@ -140,7 +143,7 @@ function coerceRef(
           ownerFiber.tag === ClassComponent,
           'Function components cannot have refs.',
         );
-        inst = ownerFiber.stateNode;
+        inst = ownerFiber.stateNode; //inst即this
       }
       invariant(
         inst,
@@ -154,11 +157,11 @@ function coerceRef(
         current !== null &&
         current.ref !== null &&
         typeof current.ref === 'function' &&
-        current.ref._stringRef === stringRef
+        current.ref._stringRef === stringRef  //字符串ref未改变只需要返回当前的ref即可
       ) {
         return current.ref;
       }
-      const ref = function(value) {
+      const ref = function(value) { //value值为：挂载ref的那个dom实例
         let refs = inst.refs;
         if (refs === emptyRefsObject) {
           // This is a lazy pooled frozen object, so we need to initialize.
@@ -167,10 +170,10 @@ function coerceRef(
         if (value === null) {
           delete refs[stringRef];
         } else {
-          refs[stringRef] = value;
+          refs[stringRef] = value; //this.refs.stringRef=》即挂载dom实例
         }
       };
-      ref._stringRef = stringRef;
+      ref._stringRef = stringRef; //把字符串挂载到ref._stringRef 属性上
       return ref;
     } else {
       invariant(
