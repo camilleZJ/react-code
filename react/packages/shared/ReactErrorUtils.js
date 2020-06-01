@@ -51,8 +51,8 @@ export function invokeGuardedCallback<A, B, C, D, E, F, Context>(
 ): void {
   hasError = false;
   caughtError = null;
-  invokeGuardedCallbackImpl.apply(reporter, arguments);
-}
+  invokeGuardedCallbackImpl.apply(reporter, arguments); //arguments传进来的所有参数 :invokeGuardedCallbackImpl(arguments)
+} //invokeGuardedCallbackImpl将this指向reporter对象，就可以在invokeGuardedCallbackImpl中通过this.onError调用reporter中的onError方法
 
 /**
  * Same as invokeGuardedCallback, but instead of returning an error, it stores

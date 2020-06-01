@@ -188,7 +188,7 @@ export function updateWrapper(element: Element, props: Object) {
     } else if (node.value !== toString(value)) {
       node.value = toString(value);
     }
-  } else if (type === 'submit' || type === 'reset') {
+  } else if (type === 'submit' || type === 'reset') { //之前可能是其他input类型，新的改为了submit或reset，要去掉value属性
     // Submit/reset inputs need the attribute removed completely to avoid
     // blank-text buttons.
     node.removeAttribute('value');

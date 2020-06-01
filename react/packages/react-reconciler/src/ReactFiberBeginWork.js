@@ -172,22 +172,24 @@ function forceUnmountCurrentAndReconcile(
   // To do this, we're going to go through the reconcile algorithm twice. In
   // the first pass, we schedule a deletion for all the current children by
   // passing null.
-  workInProgress.child = reconcileChildFibers(
+  workInProgress.child = reconcileChildFibers( //强制把子节点删掉
     workInProgress,
     current.child,
-    null,
+    null,  //newChildren为null，强制把子节点删掉渲染出一个没有子树的classComponent：deleteRemainingChildren
     renderExpirationTime,
-  );
+  );  //删除current.child以及所有sibling子节点之后return null
   // In the second pass, we mount the new children. The trick here is that we
   // pass null in place of where we usually pass the current child set. This has
   // the effect of remounting all children regardless of whether their their
   // identity matches.
-  workInProgress.child = reconcileChildFibers(
+  workInProgress.child = reconcileChildFibers( //在渲染一遍，oldChilren为null
     workInProgress,
-    null,
-    nextChildren,
+    null,  //currentFirstChild为null不涉及key值对比复用fiber而是直接创建
+    nextChildren, //从有错误的updateQueue中计算出了一个新的state，所以直接创建fiber即可
     renderExpirationTime,
   );
+
+  //第一次渲染强制把子树清空，第二次直接渲染nextChildren，就不需要根据key对比了=》提高性能
 }
 
 function updateForwardRef(
@@ -512,10 +514,10 @@ function finishClassComponent(
 
   const didCaptureError = (workInProgress.effectTag & DidCapture) !== NoEffect;  //判断workInProgress.effectTag上是否有DidCapture，以上流程有错误就会在effectTag上添加DidCapture
 
-  if (!shouldUpdate && !didCaptureError) {
+  if (!shouldUpdate && !didCaptureError) { //不需要更新
     // Context providers should defer to sCU for rendering
-    if (hasContext) {
-      invalidateContextProvider(workInProgress, Component, false);
+    if (hasContext) { //updateClassComponent里遇到旧的context API就会设置此值为true
+      invalidateContextProvider(workInProgress, Component, false); //不需要更新情况下，DidChange为false
     }
 
     return bailoutOnAlreadyFinishedWork(  //跳过更新
@@ -569,7 +571,7 @@ function finishClassComponent(
     // the existing children. Conceptually, the normal children and the children
     // that are shown on error are two different sets, so we shouldn't reuse
     // normal children even if their identities match.
-    forceUnmountCurrentAndReconcile(  //强制重新计算新的child
+    forceUnmountCurrentAndReconcile(  //强制重新计算新的child，报错了不会进入下面的调和子节点
       current,
       workInProgress,
       nextChildren,
@@ -1313,13 +1315,13 @@ function updateContextProvider(
   workInProgress: Fiber,
   renderExpirationTime: ExpirationTime,
 ) {
-  const providerType: ReactProviderType<any> = workInProgress.type;
-  const context: ReactContext<any> = providerType._context;
+  const providerType: ReactProviderType<any> = workInProgress.type;  //createContext返回的Provider对象
+  const context: ReactContext<any> = providerType._context; //createContext APi中Provider对象中_context挂载的是当前的context对象，这个context对象就是Consumer
 
   const newProps = workInProgress.pendingProps;
   const oldProps = workInProgress.memoizedProps;
 
-  const newValue = newProps.value;
+  const newValue = newProps.value;  //Provider组件上value属性提供值：props.value
 
   if (__DEV__) {
     const providerPropTypes = workInProgress.type.propTypes;
@@ -1339,14 +1341,14 @@ function updateContextProvider(
 
   if (oldProps !== null) {
     const oldValue = oldProps.value;
-    const changedBits = calculateChangedBits(context, newValue, oldValue);
-    if (changedBits === 0) {
+    const changedBits = calculateChangedBits(context, newValue, oldValue); //新旧value是否发生变化0-无变化  MAX_SIGNED_31_BIT_INT发生变化
+    if (changedBits === 0) { //无变化
       // No change. Bailout early if children are the same.
       if (
         oldProps.children === newProps.children &&
         !hasLegacyContextChanged()
       ) {
-        return bailoutOnAlreadyFinishedWork(
+        return bailoutOnAlreadyFinishedWork( //跳过更新
           current,
           workInProgress,
           renderExpirationTime,
@@ -1355,7 +1357,7 @@ function updateContextProvider(
     } else {
       // The context value changed. Search for matching consumers and schedule
       // them to update.
-      propagateContextChange(
+      propagateContextChange( //新旧value变化=》必须更新组件
         workInProgress,
         context,
         changedBits,
@@ -1376,7 +1378,7 @@ function updateContextConsumer(
   workInProgress: Fiber,
   renderExpirationTime: ExpirationTime,
 ) {
-  let context: ReactContext<any> = workInProgress.type;
+  let context: ReactContext<any> = workInProgress.type; //context.Consumer = context
   // The logic below for Context differs depending on PROD or DEV mode. In
   // DEV mode, we create a separate object for Context.Consumer that acts
   // like a proxy to Context. This proxy object adds unnecessary code in PROD
@@ -1404,7 +1406,7 @@ function updateContextConsumer(
     }
   }
   const newProps = workInProgress.pendingProps;
-  const render = newProps.children;
+  const render = newProps.children; //Consumer内的children是value=> {}即是一个函数，接收context值
 
   if (__DEV__) {
     warningWithoutStack(
@@ -1416,8 +1418,8 @@ function updateContextConsumer(
     );
   }
 
-  prepareToReadContext(workInProgress, renderExpirationTime);
-  const newValue = readContext(context, newProps.unstable_observedBits);
+  prepareToReadContext(workInProgress, renderExpirationTime); //将一些全局变量初始化
+  const newValue = readContext(context, newProps.unstable_observedBits); //context api正常调用的时候并没有传此值，是未公开的，因此就默认unstable_observedBits未null
   let newChildren;
   if (__DEV__) {
     ReactCurrentOwner.current = workInProgress;
@@ -1501,7 +1503,7 @@ function beginWork(
     const newProps = workInProgress.pendingProps;
     if (
       oldProps === newProps &&  //更新先后属性没变
-      !hasLegacyContextChanged() && //老的Context相关，很浪费性能
+      !hasLegacyContextChanged() && //老的Context相关，很浪费性能如下该if条件内的所有类型组件的是否能跳过本次更新都受这个context影响，所以说旧的context影响这个子树的更新
       (updateExpirationTime === NoWork ||  //没有更新任务
         updateExpirationTime > renderExpirationTime) //更新的优先级不是最高
     ) { //优化点：以上条件可以跳出本次更新
@@ -1518,7 +1520,7 @@ function beginWork(
           break;
         case ClassComponent: {
           const Component = workInProgress.type;
-          if (isLegacyContextProvider(Component)) {
+          if (isLegacyContextProvider(Component)) { //带有Legacy的都是遗留下来的
             pushLegacyContextProvider(workInProgress);
           }
           break;

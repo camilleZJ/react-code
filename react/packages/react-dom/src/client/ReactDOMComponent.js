@@ -234,11 +234,11 @@ function ensureListeningTo(rootContainerElement, registrationName) {
 
 function getOwnerDocumentFromRootContainer(
   rootContainerElement: Element | Document,
-): Document {
+): Document {  //rootContainerElement是fiberRoot上的containerInfo
   return rootContainerElement.nodeType === DOCUMENT_NODE
     ? (rootContainerElement: any)
-    : rootContainerElement.ownerDocument;
-}
+    : rootContainerElement.ownerDocument;  //window.document
+}  //不直接使用window.document，以上实现主要为了兼容多平台
 
 function noop() {}
 
@@ -330,9 +330,9 @@ function updateDOMProperties(
   isCustomComponentTag: boolean,
 ): void {
   // TODO: Handle wasCustomComponentTag
-  for (let i = 0; i < updatePayload.length; i += 2) {
-    const propKey = updatePayload[i];
-    const propValue = updatePayload[i + 1];
+  for (let i = 0; i < updatePayload.length; i += 2) { //遍历updatePayload数组，注意i += 2步长是2
+    const propKey = updatePayload[i]; //updatePayload.push(STYLE, styleUpdates)每次key、value一同push进去的
+    const propValue = updatePayload[i + 1]; 
     if (propKey === STYLE) {
       CSSPropertyOperations.setValueForStyles(domElement, propValue);
     } else if (propKey === DANGEROUSLY_SET_INNER_HTML) {
@@ -442,7 +442,7 @@ export function createTextNode(
 ): Text {
   return getOwnerDocumentFromRootContainer(rootContainerElement).createTextNode(
     text,
-  );
+  );  //先获取document对象，再调用js原生Api：createTextNode去创建文本节点
 }
 
 export function setInitialProperties(
@@ -787,8 +787,8 @@ export function updateProperties(
     tag === 'input' &&
     nextRawProps.type === 'radio' &&
     nextRawProps.name != null
-  ) {
-    ReactDOMInput.updateChecked(domElement, nextRawProps);
+  ) { //value和是否选中绑定，此处就是处理标签的checked情况设置checked值
+    ReactDOMInput.updateChecked(domElement, nextRawProps); //DOMPropertyOperations.setValueForProperty(node, 'checked', checked, false);-》node.setAttribute/setAttributeNS或者node.removeAttribute
   }
 
   const wasCustomComponentTag = isCustomComponent(tag, lastRawProps);
@@ -803,7 +803,7 @@ export function updateProperties(
 
   // TODO: Ensure that an update gets scheduled if any of the special props
   // changed.
-  switch (tag) {
+  switch (tag) { //input、textarea、select中特殊属性操作，如value值需要手动toString(),radio等需要处理checked属性，还有一些默认值defaultValue处理
     case 'input':
       // Update the wrapper around inputs *after* updating props. This has to
       // happen after `updateDOMProperties`. Otherwise HTML5 input validations

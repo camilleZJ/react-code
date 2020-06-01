@@ -384,11 +384,11 @@ function commitAllHostEffects() {
 
     const effectTag = nextEffect.effectTag;
 
-    if (effectTag & ContentReset) {
-      commitResetTextContent(nextEffect);
+    if (effectTag & ContentReset) { //文字节点=》重置内容即可
+      commitResetTextContent(nextEffect); //node=nextEffect.stateNode, node.textContent = '';
     }
 
-    if (effectTag & Ref) {
+    if (effectTag & Ref) { //ref
       const current = nextEffect.alternate;
       if (current !== null) {
         commitDetachRef(current);
@@ -399,36 +399,36 @@ function commitAllHostEffects() {
     // updates, and deletions. To avoid needing to add a case for every
     // possible bitmap value, we remove the secondary effects from the
     // effect tag and switch on that value.
-    let primaryEffectTag = effectTag & (Placement | Update | Deletion);
+    let primaryEffectTag = effectTag & (Placement | Update | Deletion); //Placement-新增节点 Update-更新原有节点 Deletion-删除节点，&一个|的集合=》偶一个或几个
     switch (primaryEffectTag) {
-      case Placement: {
+      case Placement: { //新增-插入
         commitPlacement(nextEffect);
         // Clear the "placement" from effect tag so that we know that this is inserted, before
         // any life-cycles like componentDidMount gets called.
         // TODO: findDOMNode doesn't rely on this any more but isMounted
         // does and isMounted is deprecated anyway so we should be able
         // to kill this.
-        nextEffect.effectTag &= ~Placement;
+        nextEffect.effectTag &= ~Placement; //节点已插入，在所有生命周期方法调用之前effectTag去掉Placement
         break;
       }
-      case PlacementAndUpdate: {
-        // Placement
-        commitPlacement(nextEffect);
+      case PlacementAndUpdate: {  //有Placement和Update：原有节点位置与sibling发生了交换
+        // Placement 
+        commitPlacement(nextEffect); //插入过程
         // Clear the "placement" from effect tag so that we know that this is inserted, before
         // any life-cycles like componentDidMount gets called.
-        nextEffect.effectTag &= ~Placement;
+        nextEffect.effectTag &= ~Placement; //effectTag去掉Placement
 
         // Update
         const current = nextEffect.alternate;
-        commitWork(current, nextEffect);
+        commitWork(current, nextEffect); //update过程
         break;
       }
-      case Update: {
+      case Update: { //属性变化-更新
         const current = nextEffect.alternate;
         commitWork(current, nextEffect);
         break;
       }
-      case Deletion: {
+      case Deletion: { //删除
         commitDeletion(nextEffect);
         break;
       }
@@ -441,17 +441,19 @@ function commitAllHostEffects() {
   }
 }
 
-function commitBeforeMutationLifecycles() {
+function commitBeforeMutationLifecycles() { //获取快照
   while (nextEffect !== null) {
     if (__DEV__) {
-      ReactCurrentFiber.setCurrentFiber(nextEffect);
+      ReactCurrentFiber.setCurrentFiber(nextEffect); //全局变量current = fiber;
     }
 
     const effectTag = nextEffect.effectTag;
     if (effectTag & Snapshot) {
       recordEffect();
+
+      //以下才是循环处理effect链的目的：主要操作就是对比classComponent有effectTag为Snapshot就获取快照snapshot并挂在到instance上
       const current = nextEffect.alternate;
-      commitBeforeMutationLifeCycles(current, nextEffect);
+      commitBeforeMutationLifeCycles(current, nextEffect); //引用外部文件的该函数，与所在函数只是同名
     }
 
     // Don't cleanup effects yet;
@@ -460,7 +462,7 @@ function commitBeforeMutationLifecycles() {
   }
 
   if (__DEV__) {
-    ReactCurrentFiber.resetCurrentFiber();
+    ReactCurrentFiber.resetCurrentFiber(); //全局变量current = null;
   }
 }
 
@@ -476,10 +478,10 @@ function commitAllLifeCycles(
       ReactStrictModeWarnings.flushPendingDeprecationWarnings();
     }
   }
-  while (nextEffect !== null) {
+  while (nextEffect !== null) {  //root.finishedWork effect链上的第一项firstEffect
     const effectTag = nextEffect.effectTag;
 
-    if (effectTag & (Update | Callback)) {
+    if (effectTag & (Update | Callback)) {  //effectTag为Update或Callback
       recordEffect();
       const current = nextEffect.alternate;
       commitLifeCycles(
@@ -522,8 +524,8 @@ function markLegacyErrorBoundaryAsFailed(instance: mixed) {
   }
 }
 
-function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
-  isWorking = true;
+function commitRoot(root: FiberRoot, finishedWork: Fiber): void {  //commitRoot不像renderRoot可以中断，该阶段不能中断，所以react尽可能少的把任务交到高阶段处理
+  isWorking = true; //renderRoot开始也设置此值为true，结束设为false
   isCommitting = true;
   startCommitTimer();
 
@@ -533,7 +535,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
       'related to the return field. This error is likely caused by a bug ' +
       'in React. Please file an issue.',
   );
-  const committedExpirationTime = root.pendingCommitExpirationTime;
+  const committedExpirationTime = root.pendingCommitExpirationTime;  //renderRoot阶段赋值的pendingCommitExpirationTime就是renderRoot阶段处理的expirationTime
   invariant(
     committedExpirationTime !== NoWork,
     'Cannot commit an incomplete root. This error is likely caused by a ' +
@@ -544,15 +546,15 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
   // Update the pending priority levels to account for the work that we are
   // about to commit. This needs to happen before calling the lifecycles, since
   // they may schedule additional updates.
-  const updateExpirationTimeBeforeCommit = finishedWork.expirationTime;
-  const childExpirationTimeBeforeCommit = finishedWork.childExpirationTime;
+  const updateExpirationTimeBeforeCommit = finishedWork.expirationTime; //expirationTime也是记录所有子树中优先级最高的，大多数时候和childExpirationTime相同，除了强制指定，如上renderRoot出错时suspend中强制root.expirationTime=Sync
+  const childExpirationTimeBeforeCommit = finishedWork.childExpirationTime; //finishedWork为rootFiber，所以childExpirationTime是所有子树中优先级最高的节点的expirationTime
   const earliestRemainingTimeBeforeCommit =
     updateExpirationTimeBeforeCommit === NoWork ||
     (childExpirationTimeBeforeCommit !== NoWork &&
       childExpirationTimeBeforeCommit < updateExpirationTimeBeforeCommit)
       ? childExpirationTimeBeforeCommit
-      : updateExpirationTimeBeforeCommit;
-  markCommittedPriorityLevels(root, earliestRemainingTimeBeforeCommit);
+      : updateExpirationTimeBeforeCommit;  //取优先级最小且不是NoWork
+  markCommittedPriorityLevels(root, earliestRemainingTimeBeforeCommit); //优先级标记
 
   let prevInteractions: Set<Interaction> = (null: any);
   if (enableSchedulerTracing) {
@@ -566,12 +568,12 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
   ReactCurrentOwner.current = null;
 
   let firstEffect;
-  if (finishedWork.effectTag > PerformedWork) {
+  if (finishedWork.effectTag > PerformedWork) {  //finishedWork也需要在commit阶段处理
     // A fiber's effect list consists only of its children, not itself. So if
     // the root has an effect, we need to add it to the end of the list. The
     // resulting list is the set that would belong to the root's parent, if
     // it had one; that is, all the effects in the tree including the root.
-    if (finishedWork.lastEffect !== null) {
+    if (finishedWork.lastEffect !== null) {  //将finishedWork加入到effect链表最后
       finishedWork.lastEffect.nextEffect = finishedWork;
       firstEffect = finishedWork.firstEffect;
     } else {
@@ -580,7 +582,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
   } else {
     // There is no effect on the root.
     firstEffect = finishedWork.firstEffect;
-  }
+  } //renderRoot阶段可知有effectTag的fiber会添加到其父级的effect链上，再把这个链一层一层往父级上挂，所以finishedWork的effect链只包含了其children的fiber，不包含其自己的，所以此处将finishedWork fiber添加到effect链的最后
 
   prepareForCommit(root.containerInfo);
 
@@ -598,7 +600,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
       }
     } else {
       try {
-        commitBeforeMutationLifecycles();
+        commitBeforeMutationLifecycles(); //处理effect上fiber.tag=classComponent的节点effectTag有snapshot的，创建快照并通过属性instance.__reactInternalSnapshotBeforeUpdate挂载到对应fiber的instance上
       } catch (e) {
         didError = true;
         error = e;
@@ -612,8 +614,8 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
       );
       captureCommitPhaseError(nextEffect, error);
       // Clean-up
-      if (nextEffect !== null) {
-        nextEffect = nextEffect.nextEffect;
+      if (nextEffect !== null) {//nextEffect是一个全局变量，上面拿到第一个effect进入commitBeforeMutationLifecycles，从这个第一个开始循环处理effect链中的effect，处理过程中出错，那么此时的全局变量nextEffect就是出错那个，下面有获取了nextEffect的下一项就跳过这个出错的继续向下执行commitBeforeMutationLifecycles
+        nextEffect = nextEffect.nextEffect; //当前effect处理出错，就继续处理effect中的下一个effect
       }
     }
   }
@@ -641,7 +643,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
       }
     } else {
       try {
-        commitAllHostEffects();
+        commitAllHostEffects(); //操作DOM节点需要做的内容：如dom节点是新增的需要做插入的操作，删除、属性修改等
       } catch (e) {
         didError = true;
         error = e;
@@ -680,7 +682,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
     let didError = false;
     let error;
     if (__DEV__) {
-      invokeGuardedCallback(
+      invokeGuardedCallback(  //开发时使用的方法-唯一开发环境下需了解的，如下非开发环境用try catch而这个方法在执行函数传参的同时会收集错误
         null,
         commitAllLifeCycles,
         null,
@@ -693,7 +695,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
       }
     } else {
       try {
-        commitAllLifeCycles(root, committedExpirationTime);
+        commitAllLifeCycles(root, committedExpirationTime); //组件相关的生命周期方法都会在此处调用
       } catch (e) {
         didError = true;
         error = e;
@@ -721,6 +723,7 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
     ReactFiberInstrumentation.debugTool.onCommitWork(finishedWork);
   }
 
+  //再一次进行上面最小优先级时间判断，原因：上面循环时执行了生命周期方法，这些方法中可能又产生了更新finishedWork.childExpirationTime可能发生了变化
   const updateExpirationTimeAfterCommit = finishedWork.expirationTime;
   const childExpirationTimeAfterCommit = finishedWork.childExpirationTime;
   const earliestRemainingTimeAfterCommit =
@@ -732,11 +735,11 @@ function commitRoot(root: FiberRoot, finishedWork: Fiber): void {
   if (earliestRemainingTimeAfterCommit === NoWork) {
     // If there's no remaining work, we can clear the set of already failed
     // error boundaries.
-    legacyErrorBoundariesThatAlreadyFailed = null;
+    legacyErrorBoundariesThatAlreadyFailed = null; //上面的判断主要设置该全局变量
   }
-  onCommit(root, earliestRemainingTimeAfterCommit);
+  onCommit(root, earliestRemainingTimeAfterCommit); //更新root.expirationTime为earliestRemainingTimeAfterCommit，并将root.finishedWork=null
 
-  if (enableSchedulerTracing) {
+  if (enableSchedulerTracing) {  //polifill相关
     __interactionsRef.current = prevInteractions;
 
     let subscriber;
@@ -999,7 +1002,7 @@ function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
         ReactCurrentFiber.resetCurrentFiber();
       }
 
-      if (next !== null) {
+      if (next !== null) {  //捕获到了错误：next是报错节点本身（本身可以捕获错误）或以上某个能处理错误的组件workInProcess
         stopWorkTimer(workInProgress);
         if (__DEV__ && ReactFiberInstrumentation.debugTool) {
           ReactFiberInstrumentation.debugTool.onCompleteWork(workInProgress);
@@ -1022,14 +1025,15 @@ function completeUnitOfWork(workInProgress: Fiber): Fiber | null {
         // back here again.
         // Since we're restarting, remove anything that is not a host effect
         // from the effect tag.
-        next.effectTag &= HostEffectMask;
+        next.effectTag &= HostEffectMask;  //&HostEffectMask是排除Incomplete和ShouldCapture，DidCapture会保存下来-》看ReactSideEffectTags.js
         return next;
       }
 
-      if (returnFiber !== null) {
+      //next=null，该节点没有错误处理能力
+      if (returnFiber !== null) { //还没到rootFiber
         // Mark the parent fiber as incomplete and clear its effect list.
         returnFiber.firstEffect = returnFiber.lastEffect = null;
-        returnFiber.effectTag |= Incomplete;
+        returnFiber.effectTag |= Incomplete;  //子树节点报错，本身及一层层的fiber.return父节点都会增加effectTag |= Incomplete，直到找到第一个能处理错误的组件添加effectTag |= ShouldCapture
       }
 
       if (__DEV__ && ReactFiberInstrumentation.debugTool) {
@@ -1225,10 +1229,10 @@ function renderRoot(
     try {
       workLoop(isYieldy); //循环执行workLoop
     } catch (thrownValue) {
-      if (nextUnitOfWork === null) {
+      if (nextUnitOfWork === null) { //正常不会出现为null的=》致命错误
         // This is a fatal error.
-        didFatal = true;
-        onUncaughtError(thrownValue);
+        didFatal = true;  
+        onUncaughtError(thrownValue); //中断渲染
       } else {
         if (__DEV__) {
           // Reset global debug state
@@ -1253,7 +1257,7 @@ function renderRoot(
 
         const sourceFiber: Fiber = nextUnitOfWork;
         let returnFiber = sourceFiber.return;
-        if (returnFiber === null) {
+        if (returnFiber === null) { //return为null说明是更新rootFiber，rootFiber是没用用户参与的更新=》react级别的错误
           // This is the root. The root could capture its own errors. However,
           // we don't know if it errors before or after we pushed the host
           // context. This information is needed to avoid a stack mismatch.
@@ -1261,17 +1265,17 @@ function renderRoot(
           // which phase it fails in, but doesn't seem worth it. At least
           // for now.
           didFatal = true;
-          onUncaughtError(thrownValue);
-        } else {
-          throwException(
+          onUncaughtError(thrownValue); //致命错误 中断渲染
+        } else { //除了以上就是常规操作中出现了错误
+          throwException(  //常规操作出现异常抛出
             root,
             returnFiber,
             sourceFiber,
             thrownValue,
             nextRenderExpirationTime,
           );
-          nextUnitOfWork = completeUnitOfWork(sourceFiber);
-          continue;
+          nextUnitOfWork = completeUnitOfWork(sourceFiber);  //该节点出错，错误处理后立马completeUnitOfWork该节点，因为该节点已经出错不需要去渲染其所有子节点了，执行completeUnitOfWork中的unwindWork
+          continue;  //nextUnitOfWork是从报错节点一层层向上找的某个节点的sibling或者是能处理报错节点的第一个组件，该组件的effectTag已由ShouldCapture变为didCapture
         }
       }
     }
@@ -1301,7 +1305,7 @@ function renderRoot(
     // that we're in the middle of an async render. Set it to null to indicate
     // there's no more work to be done in the current batch.
     nextRoot = null;
-    onFatal(root);
+    onFatal(root);  //root.finishedWork = null;
     return;
   }
 
@@ -1313,7 +1317,7 @@ function renderRoot(
     const didCompleteRoot = false;
     stopWorkLoopTimer(interruptedBy, didCompleteRoot);
     interruptedBy = null;
-    onYield(root);
+    onYield(root);  //root.finishedWork = null;
     return;
   }
 
@@ -1362,7 +1366,7 @@ function renderRoot(
     ) {
       root.didError = true;
       const suspendedExpirationTime = (root.nextExpirationTimeToWorkOn = expirationTime);
-      const rootExpirationTime = (root.expirationTime = Sync);
+      const rootExpirationTime = (root.expirationTime = Sync);  //强制修改expirationTime为Sync，否则大多数情况下root.expirationTime=root.childExpirationTime
       onSuspend(
         root,
         rootWorkInProgress,
@@ -2275,7 +2279,7 @@ function performWorkOnRoot(
       }
       const isYieldy = false; //isYieldy任务是否可以中断，处于deadline === null || isExpired下不可中断即isYieldy = false
       renderRoot(root, isYieldy, isExpired);
-      finishedWork = root.finishedWork;
+      finishedWork = root.finishedWork;  //不中断、不出错root.finishedWork才有值否则为null
       if (finishedWork !== null) {
         // We've completed the root. Commit it.
         completeRoot(root, finishedWork, expirationTime);
@@ -2383,7 +2387,7 @@ function onUncaughtError(error: mixed) {
   );
   // Unschedule this root so we don't work on it again until there's
   // another update.
-  nextFlushedRoot.expirationTime = NoWork;
+  nextFlushedRoot.expirationTime = NoWork;  //修改正在渲染的节点的expirationTime = NoWork=》更新任务不在执行，中断渲染
   if (!hasUnhandledError) {
     hasUnhandledError = true;
     unhandledError = error;

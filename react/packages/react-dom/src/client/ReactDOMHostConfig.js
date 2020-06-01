@@ -278,7 +278,7 @@ export function createTextInstance(
     validateDOMNesting(null, text, hostContextDev.ancestorInfo);
   }
   const textNode: TextInstance = createTextNode(text, rootContainerInstance);
-  precacheFiberNode(internalInstanceHandle, textNode);
+  precacheFiberNode(internalInstanceHandle, textNode); //和HostComponent一样，主要是在新创建好的node节点上通过属性把workInProcess挂载上
   return textNode;
 }
 
@@ -353,9 +353,9 @@ export function appendChildToContainer(
   child: Instance | TextInstance,
 ): void {
   let parentNode;
-  if (container.nodeType === COMMENT_NODE) {
+  if (container.nodeType === COMMENT_NODE) { //注释节点
     parentNode = (container.parentNode: any);
-    parentNode.insertBefore(child, container);
+    parentNode.insertBefore(child, container); //在注释节点之前插入到父元素中
   } else {
     parentNode = container;
     parentNode.appendChild(child);
@@ -392,7 +392,7 @@ export function insertInContainerBefore(
   beforeChild: Instance | TextInstance,
 ): void {
   if (container.nodeType === COMMENT_NODE) {
-    (container.parentNode: any).insertBefore(child, beforeChild);
+    (container.parentNode: any).insertBefore(child, beforeChild); //fiber.tag=HostComponent时排除注释节点，注释节点的parentNode为容器父元素
   } else {
     container.insertBefore(child, beforeChild);
   }
@@ -409,7 +409,7 @@ export function removeChildFromContainer(
   container: Container,
   child: Instance | TextInstance,
 ): void {
-  if (container.nodeType === COMMENT_NODE) {
+  if (container.nodeType === COMMENT_NODE) {  //注释节点没有子节点即没能当容器
     (container.parentNode: any).removeChild(child);
   } else {
     container.removeChild(child);
