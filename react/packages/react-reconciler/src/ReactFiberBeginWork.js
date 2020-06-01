@@ -1341,14 +1341,14 @@ function updateContextProvider(
 
   if (oldProps !== null) {
     const oldValue = oldProps.value;
-    const changedBits = calculateChangedBits(context, newValue, oldValue);
-    if (changedBits === 0) {
+    const changedBits = calculateChangedBits(context, newValue, oldValue); //新旧value是否发生变化0-无变化  MAX_SIGNED_31_BIT_INT发生变化
+    if (changedBits === 0) { //无变化
       // No change. Bailout early if children are the same.
       if (
         oldProps.children === newProps.children &&
         !hasLegacyContextChanged()
       ) {
-        return bailoutOnAlreadyFinishedWork(
+        return bailoutOnAlreadyFinishedWork( //跳过更新
           current,
           workInProgress,
           renderExpirationTime,
@@ -1357,7 +1357,7 @@ function updateContextProvider(
     } else {
       // The context value changed. Search for matching consumers and schedule
       // them to update.
-      propagateContextChange(
+      propagateContextChange( //新旧value变化=》必须更新组件
         workInProgress,
         context,
         changedBits,
@@ -1378,7 +1378,7 @@ function updateContextConsumer(
   workInProgress: Fiber,
   renderExpirationTime: ExpirationTime,
 ) {
-  let context: ReactContext<any> = workInProgress.type;
+  let context: ReactContext<any> = workInProgress.type; //context.Consumer = context
   // The logic below for Context differs depending on PROD or DEV mode. In
   // DEV mode, we create a separate object for Context.Consumer that acts
   // like a proxy to Context. This proxy object adds unnecessary code in PROD
@@ -1406,7 +1406,7 @@ function updateContextConsumer(
     }
   }
   const newProps = workInProgress.pendingProps;
-  const render = newProps.children;
+  const render = newProps.children; //Consumer内的children是value=> {}即是一个函数，接收context值
 
   if (__DEV__) {
     warningWithoutStack(
@@ -1418,8 +1418,8 @@ function updateContextConsumer(
     );
   }
 
-  prepareToReadContext(workInProgress, renderExpirationTime);
-  const newValue = readContext(context, newProps.unstable_observedBits);
+  prepareToReadContext(workInProgress, renderExpirationTime); //将一些全局变量初始化
+  const newValue = readContext(context, newProps.unstable_observedBits); //context api正常调用的时候并没有传此值，是未公开的，因此就默认unstable_observedBits未null
   let newChildren;
   if (__DEV__) {
     ReactCurrentOwner.current = workInProgress;

@@ -986,11 +986,11 @@ function updateClassInstance(
   instance.props = oldProps;
 
   const oldContext = instance.context;
-  const contextType = ctor.contextType; //contextType 新的API  读了此属性就不会去读旧的API：contextTypes
+  const contextType = ctor.contextType;  //contextType无s是新API:组件.contextType = Consumer，该属性存在即使用了新API那么即使这个组件也使用了旧属性，也不会再去读旧属性
   let nextContext;
-  if (typeof contextType === 'object' && contextType !== null) {  //使用了新的Context API 就读此属性
+  if (typeof contextType === 'object' && contextType !== null) { //优先读取新API
     nextContext = readContext(contextType);
-  } else {  //旧的Context API
+  } else {  //旧的Context API：没有使用新context API才会读取旧的Context API
     const nextUnmaskedContext = getUnmaskedContext(workInProgress, ctor, true);  //获取context对像，来源与其最近得provider提供的context
     nextContext = getMaskedContext(workInProgress, nextUnmaskedContext); //从提供的provider的context中取出更新的该child用到的context。provider:childContextTypes={中提供了很多值，如上案例value和a}，更新到的某个child：contextTypes={可能只用用到了某几个值，如只用到了value}
   }

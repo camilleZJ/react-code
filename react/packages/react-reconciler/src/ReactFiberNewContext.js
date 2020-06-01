@@ -57,9 +57,9 @@ export function pushProvider<T>(providerFiber: Fiber, nextValue: T): void {
   const context: ReactContext<T> = providerFiber.type._context;
 
   if (isPrimaryRenderer) { //定值，为true
-    push(valueCursor, context._currentValue, providerFiber);
+    push(valueCursor, context._currentValue, providerFiber); //cursor只是存储每一个provider的context
 
-    context._currentValue = nextValue;
+    context._currentValue = nextValue; //context的当前值是直接挂载到context._currentValue上的，与cursor无关
     if (__DEV__) {
       warningWithoutStack(
         context._currentRenderer === undefined ||
@@ -110,16 +110,16 @@ export function calculateChangedBits<T>(
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
   if (
     (oldValue === newValue && //适用于大多数情况，如：-0 === +0返回true=》不正确，从二进制位上来说会有一个标志位的不同，以及NaN 应该等于 NaN
-      (oldValue !== 0 || 1 / oldValue === 1 / (newValue: any))) || //+0和-0区分开（+0和-0区分除0）：1 / +0为Infinity正无穷，1 / -0为-Infinity负无穷，除的结果对比来排除+0和-0
+      (oldValue !== 0 || 1 / oldValue === 1 / (newValue: any))) || //+0（0）和-0区分开（+0和-0区分除0）：1 / +0为Infinity正无穷，1 / -0为-Infinity负无穷，除的结果对比来排除+0和-0
     (oldValue !== oldValue && newValue !== newValue) // eslint-disable-line no-self-compare  排除NaN，正常NaN !== NaN，且NaN也不等于自己
   ) { //对比oldValue和newValue，利用了polyfill：es6的Object.is()，更准确的判断两个值是否完全相等，满足此条件证明两个值全等
     // No change
-    return 0;
-  } else {
+    return 0; //上一次的值和这一次的没有任何字节变化 oldValue === newValue排除0和-0  ||　两个都是NaN
+  } else { //目前createContext API 官方上是没有传_calculateChangedBits这个方法的
     const changedBits =
       typeof context._calculateChangedBits === 'function'
         ? context._calculateChangedBits(oldValue, newValue)
-        : MAX_SIGNED_31_BIT_INT;
+        : MAX_SIGNED_31_BIT_INT; //javascript最大的数，即二进制32都是1
 
     if (__DEV__) {
       warning(
@@ -129,7 +129,7 @@ export function calculateChangedBits<T>(
         changedBits,
       );
     }
-    return changedBits | 0;
+    return changedBits | 0; //| 0把小数部分去掉，只留整数部分
   }
 }
 
@@ -148,34 +148,35 @@ export function propagateContextChange(
     let nextFiber;
 
     // Visit this fiber.
-    let dependency = fiber.firstContextDependency;
-    if (dependency !== null) {
+    let dependency = fiber.firstContextDependency; 　//Consumer组件据有的
+    if (dependency !== null) { //子元素中找到了Consumer组件
       do {
         // Check if the context matches.
         if (
-          dependency.context === context &&
-          (dependency.observedBits & changedBits) !== 0
+          dependency.context === context && //遍历的这个组件的context：dependency.context是依赖于当前组件的context，即context变化依赖的组件就需要更新
+          (dependency.observedBits & changedBits) !== 0 //changedBits为32位全为1的二进制，只要dependency.observedBits不是0， &changedBits的结果都不是0（出现1个位置为1就结果=1），&=》交集部分（依赖的部分）发生了更新
         ) {
           // Match! Schedule an update on this fiber.
 
           if (fiber.tag === ClassComponent) {
             // Schedule a force update on the work-in-progress.
-            const update = createUpdate(renderExpirationTime);
-            update.tag = ForceUpdate;
+            const update = createUpdate(renderExpirationTime); //context change了，依赖这个context的组件依赖的context变化，即这个组件需要重新渲染，一个组件自身实现更新只能通过setState，而beginWork中会判断组件的expiretionTime，若是nowork即本身没有更新会执行跳过更新，而此处需要更新这个组件，所以此处主动创建这个组件的更新
+            update.tag = ForceUpdate; //注意tag为ForceUpdate，因为这个组件本身没有更新，只是依赖了当前的context，context发生了变化，所以需要重新渲染
             // TODO: Because we don't have a work-in-progress, this will add the
             // update to the current fiber, too, which means it will persist even if
             // this render is thrown away. Since it's a race condition, not sure it's
             // worth fixing.
-            enqueueUpdate(fiber, update);
+            enqueueUpdate(fiber, update); //当执行到这个组件时，发现有update就会执行更新
           }
 
+          //只有classComponent才会主动创建更新，其他只需要修改fiber.expirationTime、fiber.alternate.expirationTime,修改后子链上组件优先级发生变化，那么还需更新父链上的childExpirationTime
           if (
             fiber.expirationTime === NoWork ||
             fiber.expirationTime > renderExpirationTime
-          ) {
+          ) { //若是这个组件优先级不高，那么优先级改为此次组件更新的优先级，保证该组件在本次渲染过程中一定会执行到
             fiber.expirationTime = renderExpirationTime;
           }
-          let alternate = fiber.alternate;
+          let alternate = fiber.alternate; //current也要执行优先级的改变
           if (
             alternate !== null &&
             (alternate.expirationTime === NoWork ||
@@ -186,7 +187,7 @@ export function propagateContextChange(
           // Update the child expiration time of all the ancestors, including
           // the alternates.
           let node = fiber.return;
-          while (node !== null) {
+          while (node !== null) { //因为子元素的优先级发生改变，所以此处要修改父元素链上的childExpirationTime
             alternate = node.alternate;
             if (
               node.childExpirationTime === NoWork ||
@@ -225,7 +226,7 @@ export function propagateContextChange(
       nextFiber = fiber.child;
     }
 
-    if (nextFiber !== null) {
+    if (nextFiber !== null) { //遍历所有子树，子树遍历玩遍历sibling兄弟节点
       // Set the return pointer of the child to the work-in-progress fiber.
       nextFiber.return = fiber;
     } else {
@@ -256,7 +257,7 @@ export function prepareToReadContext(
   workInProgress: Fiber,
   renderExpirationTime: ExpirationTime,
 ): void {
-  currentlyRenderingFiber = workInProgress;
+  currentlyRenderingFiber = workInProgress; //currentlyRenderingFiber当前要更新的组件
   lastContextDependency = null;
   lastContextWithAllBitsObserved = null;
 
@@ -270,12 +271,12 @@ export function readContext<T>(
 ): T {
   if (lastContextWithAllBitsObserved === context) {
     // Nothing to do. We already observe everything in this context.
-  } else if (observedBits === false || observedBits === 0) {
+  } else if (observedBits === false || observedBits === 0) { //observedBits未传入值，为undefined，不符合
     // Do not observe any updates.
   } else {
     let resolvedObservedBits; // Avoid deopting on observable arguments or heterogeneous types.
     if (
-      typeof observedBits !== 'number' ||
+      typeof observedBits !== 'number' || //typeof undefined为undefined即符合!== 'number'
       observedBits === MAX_SIGNED_31_BIT_INT
     ) {
       // Observe all updates.
@@ -301,7 +302,7 @@ export function readContext<T>(
       currentlyRenderingFiber.firstContextDependency = lastContextDependency = contextItem;
     } else {
       // Append a new context item.
-      lastContextDependency = lastContextDependency.next = contextItem;
+      lastContextDependency = lastContextDependency.next = contextItem; //读取多个context=》可能为了hook用的，Consumer此处未用到
     }
   }
   return isPrimaryRenderer ? context._currentValue : context._currentValue2;
