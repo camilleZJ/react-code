@@ -695,7 +695,7 @@ export function diffProperties(
             lastProp.hasOwnProperty(styleName) &&
             (!nextProp || !nextProp.hasOwnProperty(styleName))
           ) {
-            if (!styleUpdates) {
+            if (!styleUpdates) {  //styleUpdates为null就变为空对象{}
               styleUpdates = {};
             }
             styleUpdates[styleName] = '';
@@ -724,7 +724,7 @@ export function diffProperties(
         styleUpdates = nextProp;
       }
     } else if (propKey === DANGEROUSLY_SET_INNER_HTML) {
-      const nextHtml = nextProp ? nextProp[HTML] : undefined;
+      const nextHtml = nextProp ? nextProp[HTML] : undefined; //HTML：__html
       const lastHtml = lastProp ? lastProp[HTML] : undefined;
       if (nextHtml != null) {
         if (lastHtml !== nextHtml) {

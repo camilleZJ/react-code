@@ -453,13 +453,13 @@ function commitAttachRef(finishedWork: Fiber) {
     let instanceToUse;
     switch (finishedWork.tag) {
       case HostComponent:
-        instanceToUse = getPublicInstance(instance);
+        instanceToUse = getPublicInstance(instance); //return instance，tag=HostComponent即dom节点对应的实例
         break;
       default:
         instanceToUse = instance;
     }
     if (typeof ref === 'function') {
-      ref(instanceToUse);
+      ref(instanceToUse); //函数式ref直接执行这个函数，dom实例作为参数
     } else {
       if (__DEV__) {
         if (!ref.hasOwnProperty('current')) {
@@ -473,18 +473,18 @@ function commitAttachRef(finishedWork: Fiber) {
         }
       }
 
-      ref.current = instanceToUse;
+      ref.current = instanceToUse; //object式ref设置对象的current值
     }
   }
 }
 
 function commitDetachRef(current: Fiber) {
-  const currentRef = current.ref;
-  if (currentRef !== null) {
+  const currentRef = current.ref; 
+  if (currentRef !== null) { //detach 卸载ref
     if (typeof currentRef === 'function') {
-      currentRef(null);
+      currentRef(null); //函数式ref直接调用value置为null
     } else {
-      currentRef.current = null;
+      currentRef.current = null; //object式ref直接使对象中的current为null
     }
   }
 }

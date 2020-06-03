@@ -494,7 +494,7 @@ function commitAllLifeCycles(
 
     if (effectTag & Ref) {
       recordEffect();
-      commitAttachRef(nextEffect);
+      commitAttachRef(nextEffect); //把更新过去真正的节点挂载到ref
     }
 
     const next = nextEffect.nextEffect;

@@ -51,7 +51,11 @@ function getUnmaskedContext(
     // we may have already pushed its own child context on the stack. A context
     // provider should not "see" its own child context. Therefore we read the
     // previous (parent) context instead for a context provider.
+<<<<<<< HEAD
+    return previousContext; //若是更新的这个组件是context的provider那么之前在beginWork或updateClassComponent阶段已经push了自己的，返回的是自己的前一个push的context
+=======
     return previousContext;  //若是更新的这个组件是context的provider那么之前在beginWork或updateClassComponent阶段已经push了自己的，返回的是自己的前一个push的context，push之前的cursor.current，context来源于其provider提供的，而不是自己提供的，自己提供的context是给其children用的
+>>>>>>> df9d105336bca74b3a7c9aefa52823435a962e96
   }
   return contextStackCursor.current; //不是provider，就不会在beginWork或updateClassComponent阶段push自己的context，所以直接返回cursor当前的context
 }
@@ -180,7 +184,11 @@ function processChildContext(
     ReactCurrentFiber.setCurrentPhase('getChildContext');
   }
   startPhaseTimer(fiber, 'getChildContext');
+<<<<<<< HEAD
+  childContext = instance.getChildContext();  //就api中提供context的classComponent中定义的方法，return{context提供的值}
+=======
   childContext = instance.getChildContext(); //旧api中提供context的classComponent中定义的方法，return{context提供的值}，调用getChildContext方法获取return的object
+>>>>>>> df9d105336bca74b3a7c9aefa52823435a962e96
   stopPhaseTimer();
   if (__DEV__) {
     ReactCurrentFiber.setCurrentPhase(null);
@@ -209,7 +217,11 @@ function processChildContext(
     );
   }
 
+<<<<<<< HEAD
+  return {...parentContext, ...childContext};  //所有provider提供的context值进行合并，注意顺序：key相同时后者覆盖前者
+=======
   return {...parentContext, ...childContext}; ////所有provider提供的context值进行合并，注意顺序：key相同时后者覆盖前者，parent的context和child的context合并，child放在最后=》后者覆盖前者，即key相同child的context会覆盖parent的context
+>>>>>>> df9d105336bca74b3a7c9aefa52823435a962e96
 }
 
 function pushContextProvider(workInProgress: Fiber): boolean {

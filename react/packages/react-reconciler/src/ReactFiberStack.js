@@ -49,8 +49,11 @@ function pop<T>(cursor: StackCursor<T>, fiber: Fiber): void {
     }
   }
 
+<<<<<<< HEAD
+=======
   //问题：[a, b, c] =》 c1, c2, c3，pop值得时候：想要拿c1的pop出来的确是c3的
   //这个问题react中没解决因为react显示入栈再出栈，在代码中保持出栈对应的顺序，而不是在此文件中控制
+>>>>>>> df9d105336bca74b3a7c9aefa52823435a962e96
   cursor.current = valueStack[index];  //push的时候是把老的值入栈，新值挂载到cursor=》pop反过来就是把老的值出栈挂回当前的cursor上
 
   valueStack[index] = null;
