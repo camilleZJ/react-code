@@ -650,7 +650,7 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
   if ( 
     (current === null || current.child === null) &&  //current === null || current.child === null首次渲染
     root.hydrate &&
-    enterHydrationState(workInProgress)
+    enterHydrationState(workInProgress) //标志着整个react应用中hydrate的开始
   ) {  //服务端渲染相关
     // If we don't have any current children this might be the first pass.
     // We always try to hydrate. If this isn't a hydration pass there won't
@@ -689,7 +689,7 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
 function updateHostComponent(current, workInProgress, renderExpirationTime) {
   pushHostContext(workInProgress);
 
-  if (current === null) {
+  if (current === null) { //初次渲染
     tryToClaimNextHydratableInstance(workInProgress);
   }
 

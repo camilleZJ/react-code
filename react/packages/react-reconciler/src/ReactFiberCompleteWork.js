@@ -607,7 +607,7 @@ function completeWork(
           // TODO: Move this and createInstance step into the beginPhase
           // to consolidate.
           if (
-            prepareToHydrateHostInstance(
+            prepareToHydrateHostInstance( //为true=》需要更新，创建好了updatePayload
               workInProgress,
               rootContainerInstance,
               currentHostContext,
@@ -615,7 +615,7 @@ function completeWork(
           ) {
             // If changes to the hydrated node needs to be applied at the
             // commit-phase we mark this as such.
-            markUpdate(workInProgress);
+            markUpdate(workInProgress); //添加更新的effctTagworkInProgress.effectTag |= Update;
           }
         } else {
           let instance = createInstance(  //创建DOM节点的过程并把workInProcess和props挂载到新建的DOM标签上

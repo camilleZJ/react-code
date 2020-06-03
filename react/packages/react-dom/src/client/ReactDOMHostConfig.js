@@ -460,7 +460,7 @@ export function canHydrateInstance(
 ): null | Instance {
   if (
     instance.nodeType !== ELEMENT_NODE ||
-    type.toLowerCase() !== instance.nodeName.toLowerCase()
+    type.toLowerCase() !== instance.nodeName.toLowerCase() //节点的标签名不一样=》不能被复用
   ) {
     return null;
   }
@@ -472,7 +472,7 @@ export function canHydrateTextInstance(
   instance: Instance | TextInstance,
   text: string,
 ): null | TextInstance {
-  if (text === '' || instance.nodeType !== TEXT_NODE) {
+  if (text === '' || instance.nodeType !== TEXT_NODE) { //不合理的text节点=》不能被复用
     // Empty strings are not parsed by HTML so there won't be a correct match here.
     return null;
   }
@@ -492,7 +492,7 @@ export function getNextHydratableSibling(
   ) {
     node = node.nextSibling;
   }
-  return (node: any);
+  return (node: any); //找到instance合理的兄弟节点
 }
 
 export function getFirstHydratableChild(
@@ -505,9 +505,9 @@ export function getFirstHydratableChild(
     next.nodeType !== ELEMENT_NODE &&
     next.nodeType !== TEXT_NODE
   ) {
-    next = next.nextSibling;
+    next = next.nextSibling; //下一个兄弟节点-同胞节点
   }
-  return (next: any);
+  return (next: any); //找到container下第一个合理的即nodeType为ELEMENT_NODE或TEXT_NODE的子节点
 }
 
 export function hydrateInstance(
@@ -518,10 +518,10 @@ export function hydrateInstance(
   hostContext: HostContext,
   internalInstanceHandle: Object,
 ): null | Array<mixed> {
-  precacheFiberNode(internalInstanceHandle, instance);
+  precacheFiberNode(internalInstanceHandle, instance); //在instance上通过属性挂载internalInstanceHandle
   // TODO: Possibly defer this until the commit phase where all the events
   // get attached.
-  updateFiberProps(instance, props);
+  updateFiberProps(instance, props); //在instance通过属性挂载props
   let parentNamespace: string;
   if (__DEV__) {
     const hostContextDev = ((hostContext: any): HostContextDev);

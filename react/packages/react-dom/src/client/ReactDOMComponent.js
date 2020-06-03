@@ -832,7 +832,7 @@ function getPossibleStandardName(propName: string): string | null {
   return null;
 }
 
-export function diffHydratedProperties(
+export function diffHydratedProperties( //与diffProperties差不多，区别是updateProps中的node是react创建的，hydrate里不是会更复杂些
   domElement: Element,
   tag: string,
   rawProps: Object,
@@ -862,7 +862,7 @@ export function diffHydratedProperties(
   }
 
   // TODO: Make sure that we check isMounted before firing any of these events.
-  switch (tag) {
+  switch (tag) { //fiber.type--绑定事件
     case 'iframe':
     case 'object':
       trapBubbledEvent(TOP_LOAD, domElement);
@@ -916,7 +916,7 @@ export function diffHydratedProperties(
       break;
   }
 
-  assertValidProps(tag, rawProps);
+  assertValidProps(tag, rawProps); //验证props
 
   if (__DEV__) {
     extraAttributeNames = new Set();
@@ -944,7 +944,7 @@ export function diffHydratedProperties(
   }
 
   let updatePayload = null;
-  for (const propKey in rawProps) {
+  for (const propKey in rawProps) { //判断每一个props在原生节点是不是存在，不存在加入到updatePayload中
     if (!rawProps.hasOwnProperty(propKey)) {
       continue;
     }
@@ -1100,7 +1100,7 @@ export function diffHydratedProperties(
     }
   }
 
-  switch (tag) {
+  switch (tag) { //dom节点的创建
     case 'input':
       // TODO: Make sure we check if this is still unmounted or do any clean
       // up necessary since we never stop tracking anymore.

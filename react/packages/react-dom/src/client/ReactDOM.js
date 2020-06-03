@@ -437,19 +437,19 @@ function getReactRootElementInContainer(container: any) {
     return null;
   }
 
-  if (container.nodeType === DOCUMENT_NODE) {
-    return container.documentElement;
+  if (container.nodeType === DOCUMENT_NODE) { //window.document
+    return container.documentElement;  //document.documentElement-》整个html节点，渲染会导致html内容被清空，所以不建议使用document最为containner
   } else {
-    return container.firstChild;
+    return container.firstChild; //如传入root根节点，那么其没有child，即firstChild返回null
   }
 }
 
 function shouldHydrateDueToLegacyHeuristic(container) {
   const rootElement = getReactRootElementInContainer(container);
-  return !!(
+  return !!( //符合这个条件即使使用的不是hydrate实际仍然走的是gydrate
     rootElement &&
     rootElement.nodeType === ELEMENT_NODE &&
-    rootElement.hasAttribute(ROOT_ATTRIBUTE_NAME) //老版本服务端渲染相关
+    rootElement.hasAttribute(ROOT_ATTRIBUTE_NAME) //老版本服务端渲染相关const ROOT_ATTRIBUTE_NAME: "data-reactroot"
   );
 }
 
@@ -466,7 +466,7 @@ function legacyCreateRootFromDOMContainer(
   forceHydrate: boolean,
 ): Root {
   const shouldHydrate =
-    forceHydrate || shouldHydrateDueToLegacyHeuristic(container);
+    forceHydrate || shouldHydrateDueToLegacyHeuristic(container); //即使是render也可能会用到hydrate，以后可能会去掉||这个判断，改为显示调用hydrate或不调用
   // First clear any existing content.
   if (!shouldHydrate) {  //非服务端渲染
     let warned = false;
@@ -540,7 +540,7 @@ function legacyRenderSubtreeIntoContainer(
       };
     }
     // Initial mount should not be batched.  批量更新操作
-    DOMRenderer.unbatchedUpdates(() => {
+    DOMRenderer.unbatchedUpdates(() => { //初次渲染不走批量更新
       if (parentComponent != null) {
         root.legacy_renderSubtreeIntoContainer(
           parentComponent,
