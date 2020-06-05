@@ -34,13 +34,14 @@ export function batchedUpdates(fn, bookkeeping) {
   }
   isBatching = true;
   try {
-    return _batchedUpdatesImpl(fn, bookkeeping);
+    return _batchedUpdatesImpl(fn, bookkeeping);  //return fn(bookkeeping);
   } finally {
     // Here we wait until all updates have propagated, which is important
     // when using controlled components within layers:
     // https://github.com/facebook/react/issues/1698
     // Then we restore state of any controlled component.
     isBatching = false;
+    //以下是control inputs的处理，input上的value属性展示当前值，若是不添加onChange事件那么value变化后input显示不出来
     const controlledComponentsHavePendingUpdates = needsStateRestore();
     if (controlledComponentsHavePendingUpdates) {
       // If a controlled event was fired, we may need to restore the state of

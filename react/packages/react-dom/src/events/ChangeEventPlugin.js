@@ -50,7 +50,7 @@ const eventTypes = {
 };
 
 function createAndAccumulateChangeEvent(inst, nativeEvent, target) {
-  const event = SyntheticEvent.getPooled(
+  const event = SyntheticEvent.getPooled(  //react中的事件管理也是通过pool》减少对象声明会回收的开销
     eventTypes.change,
     inst,
     nativeEvent,
@@ -58,8 +58,8 @@ function createAndAccumulateChangeEvent(inst, nativeEvent, target) {
   );
   event.type = 'change';
   // Flag this event loop as needing state restore.
-  enqueueStateRestore(target);
-  accumulateTwoPhaseDispatches(event);
+  enqueueStateRestore(target); //target加入restoreQueue，若setState后state对应的inputValue不一样了，需要把这个值进行回滚
+  accumulateTwoPhaseDispatches(event);  //真正的从每个节点上获取listener的过程
   return event;
 }
 /**
@@ -104,7 +104,7 @@ function runEventInBatch(event) {
 }
 
 function getInstIfValueChanged(targetInst) {
-  const targetNode = getNodeFromInstance(targetInst);
+  const targetNode = getNodeFromInstance(targetInst); //targetNode = targetInst.stateNode
   if (inputValueTracking.updateValueIfChanged(targetNode)) {
     return targetInst;
   }
@@ -266,27 +266,28 @@ const ChangeEventPlugin = {
     nativeEvent,
     nativeEventTarget,
   ) {
-    const targetNode = targetInst ? getNodeFromInstance(targetInst) : window;
+    const targetNode = targetInst ? getNodeFromInstance(targetInst) : window;  //传进来的targetInst是fiber对象，获取其对应的node节点：targetInst.stateNode
 
+    //react中的onChange事件封装了不同的事件(dependencies)，不同的标签类型只能绑定指定的事件，如type为file的input或select标签是直接需要changeEvent的，像是type为text的input若想要用户输入的时候react中的value实时变化应该绑定的是inputEvent，也可以绑定change
     let getTargetInstFunc, handleEventFunc;
-    if (shouldUseChangeEvent(targetNode)) {
-      getTargetInstFunc = getTargetInstForChangeEvent;
-    } else if (isTextInputElement(targetNode)) {
-      if (isInputEventSupported) {
-        getTargetInstFunc = getTargetInstForInputOrChangeEvent;
-      } else {
+    if (shouldUseChangeEvent(targetNode)) {  //targetNode.nodeName为type为file的input或select：只能绑定change事件
+      getTargetInstFunc = getTargetInstForChangeEvent;  //绑定的是change=》return targetInst
+    } else if (isTextInputElement(targetNode)) { //targetNode.nodeName为指定类型数组内的某一type的input或textarea："input" || "change"都可以
+      if (isInputEventSupported) {  //支持input事件检验：对于浏览器来说是支持的
+        getTargetInstFunc = getTargetInstForInputOrChangeEvent;  //绑定的使"input" || "change"事件=》return getInstIfValueChanged(targetInst);
+      } else { //使平台支持input事件的pollyfill
         getTargetInstFunc = getTargetInstForInputEventPolyfill;
         handleEventFunc = handleEventsForInputEventPolyfill;
       }
-    } else if (shouldUseClickEvent(targetNode)) {
-      getTargetInstFunc = getTargetInstForClickEvent;
-    }
+    } else if (shouldUseClickEvent(targetNode)) { //type为checkbox或radio的input=》click事件
+      getTargetInstFunc = getTargetInstForClickEvent;  //绑定的是click事件=》return getInstIfValueChanged(targetInst);
+    }  
 
-    if (getTargetInstFunc) {
-      const inst = getTargetInstFunc(topLevelType, targetInst);
-      if (inst) {
-        const event = createAndAccumulateChangeEvent(
-          inst,
+    if (getTargetInstFunc) { //input、change、click事件
+      const inst = getTargetInstFunc(topLevelType, targetInst);  //执行上面的方法，不能标签指定的绑定事件才会执行
+      if (inst) {  //只有返回inst的才能创建事件
+        const event = createAndAccumulateChangeEvent( //创建事件
+          inst, //targetInst
           nativeEvent,
           nativeEventTarget,
         );
@@ -299,7 +300,7 @@ const ChangeEventPlugin = {
     }
 
     // When blurring, set the value attribute for number inputs
-    if (topLevelType === TOP_BLUR) {
+    if (topLevelType === TOP_BLUR) {  //blur事件
       handleControlledInputBlur(targetNode);
     }
   },

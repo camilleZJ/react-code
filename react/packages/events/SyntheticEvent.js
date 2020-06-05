@@ -98,10 +98,11 @@ function SyntheticEvent(
     }
   }
 
+  //react中是自己创建的事件对象，不可能直接调用原生事件对象上的一些内容，所以需要自己处理，以下就是一些封装
   const defaultPrevented =
     nativeEvent.defaultPrevented != null
       ? nativeEvent.defaultPrevented
-      : nativeEvent.returnValue === false;
+      : nativeEvent.returnValue === false;  
   if (defaultPrevented) {
     this.isDefaultPrevented = functionThatReturnsTrue;
   } else {
@@ -109,6 +110,8 @@ function SyntheticEvent(
   }
   this.isPropagationStopped = functionThatReturnsFalse;
   return this;
+
+  //如下SyntheticEvent原型链上封装了preventDefault、stopPropagation等
 }
 
 Object.assign(SyntheticEvent.prototype, {
@@ -135,7 +138,7 @@ Object.assign(SyntheticEvent.prototype, {
 
     if (event.stopPropagation) {
       event.stopPropagation();
-    } else if (typeof event.cancelBubble !== 'unknown') {
+    } else if (typeof event.cancelBubble !== 'unknown') {  //cancelBubble兼容ie
       // The ChangeEventPlugin registers a "propertychange" event for
       // IE. This event does not support bubbling or cancelling, and
       // any references to cancelBubble throw "Member not found".  A

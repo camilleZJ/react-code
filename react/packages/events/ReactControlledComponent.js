@@ -43,7 +43,7 @@ export function setRestoreImplementation(
   restoreImpl = impl;
 }
 
-export function enqueueStateRestore(target: EventTarget): void {
+export function enqueueStateRestore(target: EventTarget): void { //target加入restoreQueue，若setState后state对应的inputValue不一样了，需要把这个值进行回滚
   if (restoreTarget) {
     if (restoreQueue) {
       restoreQueue.push(target);
@@ -51,7 +51,7 @@ export function enqueueStateRestore(target: EventTarget): void {
       restoreQueue = [target];
     }
   } else {
-    restoreTarget = target;
+    restoreTarget = target;  
   }
 }
 

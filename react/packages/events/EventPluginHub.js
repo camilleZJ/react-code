@@ -45,7 +45,7 @@ const executeDispatchesAndRelease = function(
   simulated: boolean,
 ) {
   if (event) {
-    executeDispatchesInOrder(event, simulated);
+    executeDispatchesInOrder(event, simulated); //很重要=》真正调用事件
 
     if (!event.isPersistent()) {
       event.constructor.release(event);
@@ -55,8 +55,8 @@ const executeDispatchesAndRelease = function(
 const executeDispatchesAndReleaseSimulated = function(e) {
   return executeDispatchesAndRelease(e, true);
 };
-const executeDispatchesAndReleaseTopLevel = function(e) {
-  return executeDispatchesAndRelease(e, false);
+const executeDispatchesAndReleaseTopLevel = function(e) { //e是每个插件生成的对应的事件对象
+  return executeDispatchesAndRelease(e, false);  
 };
 
 function isInteractive(tag) {
@@ -176,14 +176,14 @@ function extractEvents(
     // Not every plugin in the ordering may be loaded at runtime.
     const possiblePlugin: PluginModule<AnyNativeEvent> = plugins[i];
     if (possiblePlugin) {
-      const extractedEvents = possiblePlugin.extractEvents(
+      const extractedEvents = possiblePlugin.extractEvents(  //生成每个插件的事件对象
         topLevelType,
         targetInst,
         nativeEvent,
         nativeEventTarget,
       );
       if (extractedEvents) {
-        events = accumulateInto(events, extractedEvents);
+        events = accumulateInto(events, extractedEvents);  //就是把每一个对象的生成的事件对象存储到events数组中
       }
     }
   }
@@ -195,7 +195,7 @@ export function runEventsInBatch(
   simulated: boolean,
 ) {
   if (events !== null) {
-    eventQueue = accumulateInto(eventQueue, events);
+    eventQueue = accumulateInto(eventQueue, events); //eventQueue = events
   }
 
   // Set `eventQueue` to null before processing it so that we can tell if more
@@ -203,17 +203,17 @@ export function runEventsInBatch(
   const processingEventQueue = eventQueue;
   eventQueue = null;
 
-  if (!processingEventQueue) {
+  if (!processingEventQueue) {  //eventQueue和events都不存在=》不用任何处理
     return;
   }
 
-  if (simulated) {
+  if (simulated) {  //模拟器，正式环境为false
     forEachAccumulated(
       processingEventQueue,
       executeDispatchesAndReleaseSimulated,
     );
-  } else {
-    forEachAccumulated(
+  } else { //simulated为false
+    forEachAccumulated(  //processingEventQueue若是单个事件对象，直接最为参数传入executeDispatchesAndReleaseTopLevel回调并直接，若是数组遍历这个数组，其中每一项最为参数传入executeDispatchesAndReleaseTopLevel回调并直接
       processingEventQueue,
       executeDispatchesAndReleaseTopLevel,
     );

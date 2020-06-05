@@ -66,23 +66,24 @@ if (__DEV__) {
  */
 function executeDispatch(event, simulated, listener, inst) {
   const type = event.type || 'unknown-event';
-  event.currentTarget = getNodeFromInstance(inst);
-  invokeGuardedCallbackAndCatchFirstError(type, listener, undefined, event);
+  event.currentTarget = getNodeFromInstance(inst); //return inst.stateNode
+  invokeGuardedCallbackAndCatchFirstError(type, listener, undefined, event);  //listener真正被调用，回调才完成：listener.apply(undefined, event)
   event.currentTarget = null;
 }
 
 /**
  * Standard/simple iteration through an event's collected dispatches.
  */
-export function executeDispatchesInOrder(event, simulated) {
+export function executeDispatchesInOrder(event, simulated) {  //真正调用事件
   const dispatchListeners = event._dispatchListeners;
   const dispatchInstances = event._dispatchInstances;
+  //_dispatchListeners和_dispatchInstances是一一对应关系，都是数组，在生成事件对象时做好的
   if (__DEV__) {
     validateEventDispatches(event);
   }
   if (Array.isArray(dispatchListeners)) {
     for (let i = 0; i < dispatchListeners.length; i++) {
-      if (event.isPropagationStopped()) {
+      if (event.isPropagationStopped()) {  //是否已经停止事件冒泡，是=>break
         break;
       }
       // Listeners and Instances are two parallel arrays that are always in sync.

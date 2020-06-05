@@ -144,7 +144,7 @@ function addEventTypeNameToConfig(
   [topEvent, event]: EventTuple,
   isInteractive: boolean,
 ) {
-  const capitalizedEvent = event[0].toUpperCase() + event.slice(1);
+  const capitalizedEvent = event[0].toUpperCase() + event.slice(1); //event[0]获取字符串event的首字母=》event首字母大写
   const onEvent = 'on' + capitalizedEvent;
 
   const type = {

@@ -87,13 +87,13 @@ export function traverseTwoPhase(inst, fn, arg) {
   const path = [];
   while (inst) {
     path.push(inst);
-    inst = getParent(inst);
+    inst = getParent(inst); //inst.return一层层向上找到tag为HostComponent的fiber都放入path中，冒泡到的最高层
   }
   let i;
-  for (i = path.length; i-- > 0; ) {
+  for (i = path.length; i-- > 0; ) {//从最顶层开始向下capture捕获
     fn(path[i], 'captured', arg);
   }
-  for (i = 0; i < path.length; i++) {
+  for (i = 0; i < path.length; i++) { //从底层开始向上冒泡bubble
     fn(path[i], 'bubbled', arg);
   }
 }

@@ -32,19 +32,19 @@ const UNMOUNTED = 3;
 
 function isFiberMountedImpl(fiber: Fiber): number {
   let node = fiber;
-  if (!fiber.alternate) {
+  if (!fiber.alternate) { //alternate不存在说明这个节点还没有被插入
     // If there is no alternate, this might be a new tree that isn't inserted
     // yet. If it is, then it will have a pending insertion effect on it.
     if ((node.effectTag & Placement) !== NoEffect) {
-      return MOUNTING;
+      return MOUNTING;  //有Placement这个effectTag代表是即将被插入的节点
     }
     while (node.return) {
       node = node.return;
       if ((node.effectTag & Placement) !== NoEffect) {
-        return MOUNTING;
+        return MOUNTING;  //某层父节点是即将被插入的节点
       }
     }
-  } else {
+  } else {  //fiber.alternate存在一层层往上直到找到HostRoot
     while (node.return) {
       node = node.return;
     }

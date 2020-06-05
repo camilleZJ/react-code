@@ -471,6 +471,7 @@ export function setInitialProperties(
 
   // TODO: Make sure that we check isMounted before firing any of these events.
   let props: Object;
+  //媒体类型标签处理
   switch (tag) {
     case 'iframe':
     case 'object':

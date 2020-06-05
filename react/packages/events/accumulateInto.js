@@ -39,7 +39,7 @@ function accumulateInto<T>(
   // certain that x is an Array (x could be a string with concat method).
   if (Array.isArray(current)) {
     if (Array.isArray(next)) {
-      current.push.apply(current, next);
+      current.push.apply(current, next);  //不是把next push到current而是合并，即next加如current里时会去掉最外层的[]，若current=[1,2];next=[[5, 5.1],6]执行完为：[1, 2, [5, 5.1], 6]而不是[1, 2, [[5, 5.1],6]]
       return current;
     }
     current.push(next);

@@ -25,7 +25,7 @@ type PropagationPhases = 'bubbled' | 'captured';
 function listenerAtPhase(inst, event, propagationPhase: PropagationPhases) {
   const registrationName =
     event.dispatchConfig.phasedRegistrationNames[propagationPhase];
-  return getListener(inst, registrationName);
+  return getListener(inst, registrationName); //从节点属性props上找registrationName这个属性存不存在，存在=》return registrationName，不存在=》return null
 }
 
 /**
@@ -48,14 +48,15 @@ function accumulateDirectionalDispatches(inst, phase, event) {
   if (__DEV__) {
     warningWithoutStack(inst, 'Dispatching inst must not be null');
   }
-  const listener = listenerAtPhase(inst, event, phase);
-  if (listener) {
-    event._dispatchListeners = accumulateInto(
+  const listener = listenerAtPhase(inst, event, phase); //获取eventTypes中phasedRegistrationNames，根据phase拿出是onChang或onChangeCapture，再去节点props上照这个属性存在return 这个不存在return null
+  if (listener) { 
+    event._dispatchListeners = accumulateInto( //listener加入到event._dispatchListeners数组中
       event._dispatchListeners,
-      listener,
+      listener, //listener为如onChang或onChangeCapture
     );
     event._dispatchInstances = accumulateInto(event._dispatchInstances, inst);
   }
+  //注意：event._dispatchListeners和event._dispatchInstances是一一对应的关系，且这两个里面都有bubble和capture两种事件阶段，bubble时按照inst从底层=》顶层存入，caputre正好相反，所以执行的时候按照存入的顺序即可，一层层冒泡，一层层捕获
 }
 
 /**
@@ -66,7 +67,7 @@ function accumulateDirectionalDispatches(inst, phase, event) {
  * have a different target.
  */
 function accumulateTwoPhaseDispatchesSingle(event) {
-  if (event && event.dispatchConfig.phasedRegistrationNames) {
+  if (event && event.dispatchConfig.phasedRegistrationNames) { 
     traverseTwoPhase(event._targetInst, accumulateDirectionalDispatches, event);
   }
 }
@@ -113,7 +114,7 @@ function accumulateDirectDispatchesSingle(event) {
 }
 
 export function accumulateTwoPhaseDispatches(events) {
-  forEachAccumulated(events, accumulateTwoPhaseDispatchesSingle);
+  forEachAccumulated(events, accumulateTwoPhaseDispatchesSingle); //events为数组数组中每一项执行accumulateTwoPhaseDispatchesSingle，不是数组，就对events执行accumulateTwoPhaseDispatchesSingle
 }
 
 export function accumulateTwoPhaseDispatchesSkipTarget(events) {

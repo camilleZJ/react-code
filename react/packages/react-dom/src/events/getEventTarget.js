@@ -14,10 +14,10 @@ import {TEXT_NODE} from '../shared/HTMLNodeType';
  * @param {object} nativeEvent Native browser event.
  * @return {DOMEventTarget} Target node.
  */
-function getEventTarget(nativeEvent) {
-  // Fallback to nativeEvent.srcElement for IE9
+function getEventTarget(nativeEvent) { //获取event上的target，以下其实就是pollyfill的过程 为了兼容不同的平台
+  // Fallback to nativeEvent.srcElement for IE9  
   // https://github.com/facebook/react/issues/12506
-  let target = nativeEvent.target || nativeEvent.srcElement || window;
+  let target = nativeEvent.target || nativeEvent.srcElement || window;  //srcElement为了兼容ie9
 
   // Normalize SVG <use> element events #4963
   if (target.correspondingUseElement) {

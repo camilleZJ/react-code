@@ -130,7 +130,8 @@ export function listenTo(
   const isListening = getListeningForDocument(mountAt);
   const dependencies = registrationNameDependencies[registrationName];
 
-  for (let i = 0; i < dependencies.length; i++) {
+  //注意绑定的不是registrationName和dependencies中的事件，只是属性上定义了registrationName事件，最终绑定的是其dependencies中的所有事件
+  for (let i = 0; i < dependencies.length; i++) {  
     const dependency = dependencies[i];
     if (!(isListening.hasOwnProperty(dependency) && isListening[dependency])) {
       switch (dependency) {

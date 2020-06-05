@@ -23,11 +23,11 @@ export function precacheFiberNode(hostInst, node) {
  * ReactDOMTextComponent instance ancestor.
  */
 export function getClosestInstanceFromNode(node) {
-  if (node[internalInstanceKey]) {
+  if (node[internalInstanceKey]) {  //event.target这个node节点上有一个随机的key
     return node[internalInstanceKey];
   }
 
-  while (!node[internalInstanceKey]) {
+  while (!node[internalInstanceKey]) {  //node节点上没有key 就一层层往上去父节点上找
     if (node.parentNode) {
       node = node.parentNode;
     } else {
@@ -37,7 +37,7 @@ export function getClosestInstanceFromNode(node) {
     }
   }
 
-  let inst = node[internalInstanceKey];
+  let inst = node[internalInstanceKey];  //inst就是fiber对象，初始化节点时会在node节点上加入internalInstanceKey这个属性，用来挂载fiber
   if (inst.tag === HostComponent || inst.tag === HostText) {
     // In Fiber, this will always be the deepest root.
     return inst;
