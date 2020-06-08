@@ -141,24 +141,25 @@ const topLevelEventsToDispatchConfig: {
 } = {};
 
 function addEventTypeNameToConfig(
-  [topEvent, event]: EventTuple,
+  [topEvent, event]: EventTuple,   //[topEvent, event] = [DOMTopLevelEventTypes.TOP_BLUR, 'blur'],
   isInteractive: boolean,
 ) {
   const capitalizedEvent = event[0].toUpperCase() + event.slice(1);
-  const onEvent = 'on' + capitalizedEvent;
+  const onEvent = 'on' + capitalizedEvent; //onBlur
 
-  const type = {
+  const type = { //type为eventTypes中的某一项
     phasedRegistrationNames: {
-      bubbled: onEvent,
-      captured: onEvent + 'Capture',
+      bubbled: onEvent,  //onBlur
+      captured: onEvent + 'Capture',  //onBlurCapture
     },
-    dependencies: [topEvent],
+    dependencies: [topEvent], //topEvent为DOMTopLevelEventTypes.TOP_BLUR
     isInteractive,
   };
-  eventTypes[event] = type;
-  topLevelEventsToDispatchConfig[topEvent] = type;
+  eventTypes[event] = type; //event如change
+  topLevelEventsToDispatchConfig[topEvent] = type; //topEvent为DOMTopLevelEventTypes.TOP_BLUR
 }
 
+//注意：以下两个方法第二个参数为isInteractive判断,遍历的这两个数组分别定义了interactive的事件和非Interactive的事件，区别在于绑定的事件设置的回调（addEventListerner(绑定的事件，触发是该事件的回调)）中调用了setStat/那么创建的更新update会有interactive和非Interactive的的区分，主要体现在expirationTime上，interactive的事件expirationTime会比较小，即优先级比较高，需要优先执行，因为这些事件是用户交互型的，用户操作了需要立刻得到反馈。
 interactiveEventTypeNames.forEach(eventTuple => {
   addEventTypeNameToConfig(eventTuple, true);
 });

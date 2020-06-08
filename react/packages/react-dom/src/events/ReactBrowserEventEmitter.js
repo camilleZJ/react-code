@@ -95,11 +95,11 @@ const topListenersIDKey = '_reactListenersID' + ('' + Math.random()).slice(2);
 function getListeningForDocument(mountAt: any) {
   // In IE8, `mountAt` is a host object and doesn't have `hasOwnProperty`
   // directly.
-  if (!Object.prototype.hasOwnProperty.call(mountAt, topListenersIDKey)) {
-    mountAt[topListenersIDKey] = reactTopListenersCounter++;
-    alreadyListeningTo[mountAt[topListenersIDKey]] = {};
+  if (!Object.prototype.hasOwnProperty.call(mountAt, topListenersIDKey)) { //topListenersIDKey随机数生成的常量属性，挂载到mountAt上，用于记录mountAt该节点上监听了哪些事件
+    mountAt[topListenersIDKey] = reactTopListenersCounter++; //mountAt[topListenersIDKey]=1,topListenersIDKey对应绑定事件的id
+    alreadyListeningTo[mountAt[topListenersIDKey]] = {};  
   }
-  return alreadyListeningTo[mountAt[topListenersIDKey]];
+  return alreadyListeningTo[mountAt[topListenersIDKey]]; //初次绑定事件，mountAt没有topListenersIDKey这个属性，所以alreadyListeningTo为已经绑定的所有事件为空{}，绑定事件的时候往里加
 }
 
 /**
@@ -123,16 +123,16 @@ function getListeningForDocument(mountAt: any) {
  * @param {string} registrationName Name of listener (e.g. `onClick`).
  * @param {object} mountAt Container where to mount the listener
  */
-export function listenTo(
+export function listenTo( //除了媒体事件绑定到元素上，其他事件都绑定到了document或document_fragment节点上
   registrationName: string,
   mountAt: Document | Element,
 ) {
-  const isListening = getListeningForDocument(mountAt);
-  const dependencies = registrationNameDependencies[registrationName];
-
-  for (let i = 0; i < dependencies.length; i++) {
+  const isListening = getListeningForDocument(mountAt); //返回一个对象，里面是mountAt这个节点绑定的所有事件，初次绑定事件返回空{}
+  const dependencies = registrationNameDependencies[registrationName]; //registrationNameDependencies:{onChange: [TOP_BLUR, TOP_CHANGE,...]}
+  //dependencies:绑定registrationName事件同时，需要绑定的其他依赖事件
+  for (let i = 0; i < dependencies.length; i++) { 
     const dependency = dependencies[i];
-    if (!(isListening.hasOwnProperty(dependency) && isListening[dependency])) {
+    if (!(isListening.hasOwnProperty(dependency) && isListening[dependency])) { //mountAt节点上没有绑定过dependency事件=》去绑定
       switch (dependency) {
         case TOP_SCROLL:
           trapCapturedEvent(TOP_SCROLL, mountAt);
@@ -158,11 +158,11 @@ export function listenTo(
           // We listen to them on the target DOM elements.
           // Some of them bubble so we don't want them to fire twice.
           break;
-        default:
+        default:  //注意以上事件如SCROLL、FOCUS、BLUR等监听的是捕获阶段的事件，其他默认事件即大部分事件是冒泡形式绑定的
           // By default, listen on the top level to all non-media events.
           // Media events don't bubble so adding the listener wouldn't do anything.
-          const isMediaEvent = mediaEventTypes.indexOf(dependency) !== -1;
-          if (!isMediaEvent) {
+          const isMediaEvent = mediaEventTypes.indexOf(dependency) !== -1; //媒体相关的事件如TOP_PLAY、TOP_PAUSE、TOP_ENDED、TOP_ERROR等事件
+          if (!isMediaEvent) { //不是媒体相关的事件，冒泡绑定，媒体相关事件不绑定,因为在开始setInitialProperties中媒体相关的事件先绑定之后在进行这里的事件绑定的
             trapBubbledEvent(dependency, mountAt);
           }
           break;

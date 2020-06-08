@@ -141,11 +141,11 @@ export function trapBubbledEvent(
   if (!element) {
     return null;
   }
-  const dispatch = isInteractiveTopLevelEventType(topLevelType)
+  const dispatch = isInteractiveTopLevelEventType(topLevelType) //判断绑定的这个事件是不是interactive事件，即用户交互型事件(用户交互型的事件触发的回调中调用的setState创建的update更新优先级更高)
     ? dispatchInteractiveEvent
     : dispatchEvent;
 
-  addEventBubbleListener(
+  addEventBubbleListener( //该方法就是最终来调用window.addEventListener的
     element,
     getRawEventName(topLevelType),
     // Check if interactive and wrap in interactiveUpdates

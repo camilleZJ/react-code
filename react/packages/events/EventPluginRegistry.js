@@ -41,14 +41,14 @@ function recomputePluginOrdering(): void {
   }
   for (const pluginName in namesToPlugins) {
     const pluginModule = namesToPlugins[pluginName];
-    const pluginIndex = eventPluginOrder.indexOf(pluginName);
+    const pluginIndex = eventPluginOrder.indexOf(pluginName); //namesToPlugins中比eventPluginOrder少了第一个plugin：ResponderEventPlugin，所以第一次inexOf返回的是1不是0
     invariant(
       pluginIndex > -1,
       'EventPluginRegistry: Cannot inject event plugins that do not exist in ' +
         'the plugin ordering, `%s`.',
       pluginName,
     );
-    if (plugins[pluginIndex]) {
+    if (plugins[pluginIndex]) { //plugins初始为[]，不会存在，存在就跳过
       continue;
     }
     invariant(
@@ -57,7 +57,7 @@ function recomputePluginOrdering(): void {
         'method, but `%s` does not.',
       pluginName,
     );
-    plugins[pluginIndex] = pluginModule;
+    plugins[pluginIndex] = pluginModule; //把namesToPlugins中的插件放入plugins数组，注意这个数组pluginIndex不是从0开始而是1
     const publishedEvents = pluginModule.eventTypes;
     for (const eventName in publishedEvents) {
       invariant(
@@ -93,17 +93,18 @@ function publishEventForPlugin(
       'event name, `%s`.',
     eventName,
   );
-  eventNameDispatchConfigs[eventName] = dispatchConfig;
+  //{ change: ChangeEventPlugin.eventTypes.change}=>和ChangeEventPlugin.eventTypes一样，但是eventNameDispatchConfigs是放置所有事件的eventTypes
+  eventNameDispatchConfigs[eventName] = dispatchConfig; //eventNameDispatchConfigs初始{}
 
-  const phasedRegistrationNames = dispatchConfig.phasedRegistrationNames;
+  const phasedRegistrationNames = dispatchConfig.phasedRegistrationNames; //eventName对应的事件阶段
   if (phasedRegistrationNames) {
-    for (const phaseName in phasedRegistrationNames) {
+    for (const phaseName in phasedRegistrationNames) { //phaseName：bubbled、captured
       if (phasedRegistrationNames.hasOwnProperty(phaseName)) {
-        const phasedRegistrationName = phasedRegistrationNames[phaseName];
+        const phasedRegistrationName = phasedRegistrationNames[phaseName]; //对应的阶段事件名，如onChange、onChangeCapture
         publishRegistrationName(
-          phasedRegistrationName,
-          pluginModule,
-          eventName,
+          phasedRegistrationName, //onChange
+          pluginModule, //ChangeEventPlugin
+          eventName, //change
         );
       }
     }
@@ -137,9 +138,9 @@ function publishRegistrationName(
       'registration name, `%s`.',
     registrationName,
   );
-  registrationNameModules[registrationName] = pluginModule;
+  registrationNameModules[registrationName] = pluginModule; //registrationNameModules初始{}，onChange: ChangeEventPlugin
   registrationNameDependencies[registrationName] =
-    pluginModule.eventTypes[eventName].dependencies;
+    pluginModule.eventTypes[eventName].dependencies;  //registrationNameDependencies初始是{}，onChange: [TOP_BLUR, ...]
 
   if (__DEV__) {
     const lowerCasedName = registrationName.toLowerCase();
@@ -204,7 +205,7 @@ export function injectEventPluginOrder(
       'once. You are likely trying to load more than one copy of React.',
   );
   // Clone the ordering so it cannot be dynamically mutated.
-  eventPluginOrder = Array.prototype.slice.call(injectedEventPluginOrder);
+  eventPluginOrder = Array.prototype.slice.call(injectedEventPluginOrder); //克隆数组赋值给全局变量eventPluginOrder：根据传进来的数据新创建了一个数组内容与其一样，直接操作这个数组不去影响原先的数组
   recomputePluginOrdering();
 }
 
@@ -230,7 +231,7 @@ export function injectEventPluginsByName(
     if (
       !namesToPlugins.hasOwnProperty(pluginName) ||
       namesToPlugins[pluginName] !== pluginModule
-    ) {
+    ) { //namesToPlugins初始为{}，将injectedNamesToPlugins中的plugin放入到namesToPlugins中，相同属性的替换为injectedNamesToPlugins中的插件
       invariant(
         !namesToPlugins[pluginName],
         'EventPluginRegistry: Cannot inject two different event plugins ' +

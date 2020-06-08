@@ -226,9 +226,9 @@ function ensureListeningTo(rootContainerElement, registrationName) {
   const isDocumentOrFragment =
     rootContainerElement.nodeType === DOCUMENT_NODE ||
     rootContainerElement.nodeType === DOCUMENT_FRAGMENT_NODE;
-  const doc = isDocumentOrFragment
+  const doc = isDocumentOrFragment  //react中大部分可冒泡的事件都会通过事件代理的形式来绑定,不是每个节点去绑定事件=》这种方式性能低下，还可能会导致内存溢出
     ? rootContainerElement
-    : rootContainerElement.ownerDocument;
+    : rootContainerElement.ownerDocument;   //ownerDocument获取该节点所属的DOCUMENT_NODE节点
   listenTo(registrationName, doc);
 }
 
@@ -255,14 +255,14 @@ export function trapClickOnNonInteractiveElement(node: HTMLElement) {
   node.onclick = noop;
 }
 
-function setInitialDOMProperties(
+function setInitialDOMProperties( //初始化dom上的arrtibutes和props的对应关系
   tag: string,
   domElement: Element,
   rootContainerElement: Element | Document,
   nextProps: Object,
   isCustomComponentTag: boolean,
 ): void {
-  for (const propKey in nextProps) {
+  for (const propKey in nextProps) { //propKey是dom上的每一个配置
     if (!nextProps.hasOwnProperty(propKey)) {
       continue;
     }
@@ -305,12 +305,12 @@ function setInitialDOMProperties(
       // We could have excluded it in the property list instead of
       // adding a special case here, but then it wouldn't be emitted
       // on server rendering (but we *do* want to emit it in SSR).
-    } else if (registrationNameModules.hasOwnProperty(propKey)) {
+    } else if (registrationNameModules.hasOwnProperty(propKey)) { //绑定了事件处理registrationNameModules：{onChange: ChangeEventPlugin，...}
       if (nextProp != null) {
         if (__DEV__ && typeof nextProp !== 'function') {
           warnForInvalidEventListener(propKey, nextProp);
         }
-        ensureListeningTo(rootContainerElement, propKey);
+        ensureListeningTo(rootContainerElement, propKey); //rootContainerElement挂载应用的fiberRoot对应的那个container,除了媒体相关事件都绑定到容器上--事件代理形式
       }
     } else if (nextProp != null) {
       DOMPropertyOperations.setValueForProperty(
@@ -451,7 +451,7 @@ export function setInitialProperties(
   rawProps: Object,
   rootContainerElement: Element | Document,
 ): void {
-  const isCustomComponentTag = isCustomComponent(tag, rawProps);
+  const isCustomComponentTag = isCustomComponent(tag, rawProps); //验证是不是非如font-face相关标签
   if (__DEV__) {
     validatePropertiesInDevelopment(tag, rawProps);
     if (
@@ -471,17 +471,17 @@ export function setInitialProperties(
 
   // TODO: Make sure that we check isMounted before firing any of these events.
   let props: Object;
-  switch (tag) {
+  switch (tag) { //以下标签不管用户是否绑定事件都主动添加相应事件，如video添加play、ended、error等事件
     case 'iframe':
     case 'object':
-      trapBubbledEvent(TOP_LOAD, domElement);  //绑定事件
+      trapBubbledEvent(TOP_LOAD, domElement);  //trapBubbledEvent绑定事件
       props = rawProps;
       break;
     case 'video':
     case 'audio':
       // Create listener for each media event
-      for (let i = 0; i < mediaEventTypes.length; i++) {
-        trapBubbledEvent(mediaEventTypes[i], domElement);
+      for (let i = 0; i < mediaEventTypes.length; i++) { 
+        trapBubbledEvent(mediaEventTypes[i], domElement); //添加play、ended、error等事件
       }
       props = rawProps;
       break;
@@ -535,11 +535,12 @@ export function setInitialProperties(
       break;
     default:
       props = rawProps;
-  }
+  }  //注意此处媒体事件已经绑定过，在setInitialDOMProperties中进行其他事件绑定时会判处媒体事件
+  //  注意以上媒体相关事件都是绑定的冒泡阶段事件，并且是直接绑定到更新的dom节点上
 
   assertValidProps(tag, props);
 
-  setInitialDOMProperties(
+  setInitialDOMProperties( //props处理，如STYLE、DANGEROUSLY_SET_INNER_HTML等属性应用到dom上，事件属性如onChange等进行监听
     tag,
     domElement,
     rootContainerElement,

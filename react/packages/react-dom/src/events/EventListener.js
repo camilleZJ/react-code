@@ -12,7 +12,7 @@ export function addEventBubbleListener(
   eventType: string,
   listener: Function,
 ): void {
-  element.addEventListener(eventType, listener, false);
+  element.addEventListener(eventType, listener, false); //冒泡事件最后一个参数是false
 }
 
 export function addEventCaptureListener(
@@ -20,5 +20,5 @@ export function addEventCaptureListener(
   eventType: string,
   listener: Function,
 ): void {
-  element.addEventListener(eventType, listener, true);
+  element.addEventListener(eventType, listener, true);  //捕获事件最后一个参数是true
 }

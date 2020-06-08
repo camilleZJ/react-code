@@ -31,12 +31,12 @@ import {setDefaultValue} from '../client/ReactDOMInput';
 import {disableInputAttributeSyncing} from 'shared/ReactFeatureFlags';
 
 const eventTypes = {
-  change: {
-    phasedRegistrationNames: {
+  change: { //onChange事件如 addEventListener的第一个参数"change"字符串，这个change就是事件名
+    phasedRegistrationNames: { //dom原生事件的两个阶段：捕获阶段、冒泡阶段
       bubbled: 'onChange',
-      captured: 'onChangeCapture',
+      captured: 'onChangeCapture', //平时用到的比较少
     },
-    dependencies: [
+    dependencies: [  //依赖的事件，监听change事件同时需要依赖绑定这些事件。即若是对一个节点绑定了这个change事件，那么react会对这个节点绑定这个依赖里的所有事件
       TOP_BLUR,
       TOP_CHANGE,
       TOP_CLICK,
@@ -260,7 +260,7 @@ const ChangeEventPlugin = {
 
   _isInputEventSupported: isInputEventSupported,
 
-  extractEvents: function(
+  extractEvents: function( //生成对应的事件对象
     topLevelType,
     targetInst,
     nativeEvent,

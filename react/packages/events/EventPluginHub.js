@@ -112,8 +112,8 @@ function shouldPreventMouseEvent(name, type, props) {
 /**
  * Methods for injecting dependencies.
  */
-export const injection = {
-  /**
+export const injection = {  //中定义了两个方法
+  /** 
    * @param {array} InjectedEventPluginOrder
    * @public
    */
