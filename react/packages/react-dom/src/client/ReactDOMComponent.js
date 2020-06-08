@@ -471,7 +471,12 @@ export function setInitialProperties(
 
   // TODO: Make sure that we check isMounted before firing any of these events.
   let props: Object;
+<<<<<<< HEAD
   switch (tag) { //以下标签不管用户是否绑定事件都主动添加相应事件，如video添加play、ended、error等事件
+=======
+  //媒体类型标签处理
+  switch (tag) {
+>>>>>>> refs/remotes/origin/master
     case 'iframe':
     case 'object':
       trapBubbledEvent(TOP_LOAD, domElement);  //trapBubbledEvent绑定事件

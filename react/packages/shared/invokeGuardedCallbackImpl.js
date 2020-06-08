@@ -22,9 +22,9 @@ let invokeGuardedCallbackImpl = function<A, B, C, D, E, F, Context>(
 ) {
   const funcArgs = Array.prototype.slice.call(arguments, 3);  //获取a-f参数数组
   try {
-    func.apply(context, funcArgs);
+    func.apply(context, funcArgs); //真正调用设置的回调
   } catch (error) {
-    this.onError(error);
+    this.onError(error); //处理reporter.onError中的hasError和caughtError
   }
 };
 

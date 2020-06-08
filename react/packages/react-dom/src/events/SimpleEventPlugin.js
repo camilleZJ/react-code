@@ -144,8 +144,13 @@ function addEventTypeNameToConfig(
   [topEvent, event]: EventTuple,   //[topEvent, event] = [DOMTopLevelEventTypes.TOP_BLUR, 'blur'],
   isInteractive: boolean,
 ) {
+<<<<<<< HEAD
   const capitalizedEvent = event[0].toUpperCase() + event.slice(1);
   const onEvent = 'on' + capitalizedEvent; //onBlur
+=======
+  const capitalizedEvent = event[0].toUpperCase() + event.slice(1); //event[0]获取字符串event的首字母=》event首字母大写
+  const onEvent = 'on' + capitalizedEvent;
+>>>>>>> refs/remotes/origin/master
 
   const type = { //type为eventTypes中的某一项
     phasedRegistrationNames: {
