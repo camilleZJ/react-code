@@ -127,7 +127,8 @@ export function prepareToUseHooks(
   }
   renderExpirationTime = nextRenderExpirationTime;
   currentlyRenderingFiber = workInProgress;
-  firstCurrentHook = current !== null ? current.memoizedState : null;
+  firstCurrentHook = current !== null ? current.memoizedState : null; //current !== null非首次渲染  记录functionComponent中调用的第一个Hook Api对应的对象
+  //firstCurrentHook是个链表结构：按照使用Hook Api的顺序存储Hook 对象，每一个Hook对像都会有自己的状态等
 
   // The following should have already been reset
   // currentHook = null;
@@ -155,7 +156,8 @@ export function finishHooks(
   // This must be called after every function component to prevent hooks from
   // being used in classes.
 
-  while (didScheduleRenderPhaseUpdate) {
+  //渲染中产生的更新=》在本次渲染中更新掉，而不是渲染后再执行更新
+  while (didScheduleRenderPhaseUpdate) { //渲染过程中产生的update：app=()=>{const [name, setName] = useState("jokcy");   setName();//直接调用产生更新=》渲染中产生的更新}
     // Updates were scheduled during the render phase. They are stored in
     // the `renderPhaseUpdates` map. Call the component again, reusing the
     // work-in-progress hooks and applying the additional updates on top. Keep
@@ -170,12 +172,13 @@ export function finishHooks(
 
     children = Component(props, refOrContext);
   }
-  renderPhaseUpdates = null;
+  //公共变量初始化-重置
+  renderPhaseUpdates = null; 
   numberOfReRenders = 0;
 
-  const renderedWork: Fiber = (currentlyRenderingFiber: any);
+  const renderedWork: Fiber = (currentlyRenderingFiber: any); //更新的这个functionComponent对应的fiber对象：workInProcess
 
-  renderedWork.memoizedState = firstWorkInProgressHook;
+  renderedWork.memoizedState = firstWorkInProgressHook; //functionComponent里一个个Hook对象workInProgressHook，就像每个节点对应一个个fiber对象
   renderedWork.expirationTime = remainingExpirationTime;
   renderedWork.updateQueue = (componentUpdateQueue: any);
 

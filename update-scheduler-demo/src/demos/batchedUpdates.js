@@ -12,13 +12,14 @@ export default class BatchedDemo extends React.Component {
     //   this.countNumber()
     // }, 0)
 
+    //以下两个方式console.log均输出0, 只有上面的输出1、2、3
     // setTimeout中没有`batchedUpdates`
     setTimeout(() => {
       batchedUpdates(() => this.countNumber())
     }, 0)
 
     // 事件处理函数自带`batchedUpdates`
-    // this.countNumber()
+    // this.countNumber()  
   }
 
   countNumber() {
