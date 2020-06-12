@@ -348,7 +348,7 @@ export function useReducer<S, A>(
   initialState: S,
   initialAction: A | void | null,
 ): [S, Dispatch<A>] {
-  currentlyRenderingFiber = resolveCurrentlyRenderingFiber();
+  currentlyRenderingFiber = resolveCurrentlyRenderingFiber(); //获取当前更新的functionComponent对应的fiber
   workInProgressHook = createWorkInProgressHook();
   let queue: UpdateQueue<A> | null = (workInProgressHook.queue: any);
   if (queue !== null) {
@@ -453,10 +453,10 @@ export function useReducer<S, A>(
   }
 
   // There's no existing queue, so this is the initial render.
-  if (reducer === basicStateReducer) {
+  if (reducer === basicStateReducer) { //useState是相等的，reducer传入的就是basicStateReducer
     // Special case for `useState`.
-    if (typeof initialState === 'function') {
-      initialState = initialState();
+    if (typeof initialState === 'function') { 
+      initialState = initialState(); //initialState是函数就执行获取return的内容为initialState，否则就是直接传入的initialState
     }
   } else if (initialAction !== undefined && initialAction !== null) {
     initialState = reducer(initialState, initialAction);
@@ -643,7 +643,7 @@ function dispatchAction<A>(fiber: Fiber, queue: UpdateQueue<A>, action: A) {
   );
 
   const alternate = fiber.alternate;
-  if (
+  if ( //currentlyRenderingFiber是更新functionComponent时更新组件的fiber，更新state时此值为null，functionComponent渲染时遇到直接setName()更新state时会有值-render phase update
     fiber === currentlyRenderingFiber ||
     (alternate !== null && alternate === currentlyRenderingFiber)
   ) {
@@ -673,26 +673,28 @@ function dispatchAction<A>(fiber: Fiber, queue: UpdateQueue<A>, action: A) {
   } else {
     const currentTime = requestCurrentTime();
     const expirationTime = computeExpirationForFiber(currentTime, fiber);
-    const update: Update<A> = {
+    const update: Update<A> = { //创建更新-和classComponent中setState很像
       expirationTime,
-      action,
-      next: null,
+      action, //要更新的内容如setName("jokcy2")即action为jokcy2
+      next: null, //更新的这个functionComponent上可能有多次更新，所以需要链表指针
     };
-    flushPassiveEffects();
+    flushPassiveEffects(); //useEffect相关
+
+    //以下操作很像classComponent的enqueueUpdate操作，这个updateQueue是挂载到fiber对象上的，而下面的queque是挂载到workInProgressHook上的
     // Append the update to the end of the list.
-    const last = queue.last;
-    if (last === null) {
+    const last = queue.last; //last为目前为止最后的那个update，首次更新刚创建第一个update所以为null
+    if (last === null) { 
       // This is the first update. Create a circular list.
-      update.next = update;
+      update.next = update; //循环链表
     } else {
-      const first = last.next;
+      const first = last.next; //last为最后一个update，它的next指向的是链表的第一项=》循环链表
       if (first !== null) {
         // Still circular.
-        update.next = first;
+        update.next = first;  //新创建的update插入到链表最后
       }
-      last.next = update;
+      last.next = update;   //新创建的update插入到链表最后，last就变成了倒数第二项
     }
-    queue.last = update;
-    scheduleWork(fiber, expirationTime);
+    queue.last = update; //最后的update-last为最新创建的更新，即目前为止最后的更新
+    scheduleWork(fiber, expirationTime); //和classComponent一样进行调度更新，会涉及到updateFunctionComponent
   }
 }
