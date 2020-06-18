@@ -351,9 +351,9 @@ export function useReducer<S, A>(
   currentlyRenderingFiber = resolveCurrentlyRenderingFiber(); //获取当前更新的functionComponent对应的fiber
   workInProgressHook = createWorkInProgressHook();
   let queue: UpdateQueue<A> | null = (workInProgressHook.queue: any);
-  if (queue !== null) {
+  if (queue !== null) { //调用了setName创建了更新
     // Already have a queue, so this is an update.
-    if (isReRender) {
+    if (isReRender) { //调用setName是在事件中调用的而不是渲染中所以为false
       // This is a re-render. Apply the new render phase updates to the previous
       // work-in-progress hook.
       const dispatch: Dispatch<A> = (queue.dispatch: any);
@@ -392,7 +392,7 @@ export function useReducer<S, A>(
     // The last update in the entire queue
     const last = queue.last;
     // The last update that is part of the base state.
-    const baseUpdate = workInProgressHook.baseUpdate;
+    const baseUpdate = workInProgressHook.baseUpdate; //更新过来还未赋值
 
     // Find the first unprocessed update.
     let first;
@@ -405,7 +405,7 @@ export function useReducer<S, A>(
       }
       first = baseUpdate.next;
     } else {
-      first = last !== null ? last.next : null;
+      first = last !== null ? last.next : null; //获取first
     }
     if (first !== null) {
       let newState = workInProgressHook.baseState;
@@ -415,30 +415,30 @@ export function useReducer<S, A>(
       let update = first;
       let didSkip = false;
       do {
-        const updateExpirationTime = update.expirationTime;
-        if (updateExpirationTime < renderExpirationTime) {
+        const updateExpirationTime = update.expirationTime;  //hook版本修改了expirationTime的计算方式（sync取最大值了）：xpirationTime越大优先级越高（之前是xpirationTime越小优先级越高）
+        if (updateExpirationTime < renderExpirationTime) {  //优先级不高，不会在此次更新执行
           // Priority is insufficient. Skip this update. If this is the first
           // skipped update, the previous update/state is the new base
           // update/state.
           if (!didSkip) {
             didSkip = true;
-            newBaseUpdate = prevUpdate;
-            newBaseState = newState;
+            newBaseUpdate = prevUpdate; //记录第一个被跳过的更新的前一个更新
+            newBaseState = newState; 
           }
           // Update the remaining priority in the queue.
           if (updateExpirationTime > remainingExpirationTime) {
-            remainingExpirationTime = updateExpirationTime;
+            remainingExpirationTime = updateExpirationTime; //remainingExpirationTime初始为0，记录被跳过的更新的过期时间
           }
-        } else {
+        } else { //当前更新优先级较高
           // Process this update.
           const action = update.action;
           newState = reducer(newState, action);
         }
         prevUpdate = update;
         update = update.next;
-      } while (update !== null && update !== first);
+      } while (update !== null && update !== first); //遍历整个update链，直到链尾（循环链表：最后一个的next只系那个链表第一项）
 
-      if (!didSkip) {
+      if (!didSkip) { //上面循环中没有跳过更新
         newBaseUpdate = prevUpdate;
         newBaseState = newState;
       }
