@@ -28,6 +28,7 @@ export default function areHookInputsEqual(arr1: any[], arr2: any[]) {
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
     const val1 = arr1[i];
     const val2 = arr2[i];
+    //如下就是Object.is  polyfill判断，全等里排除0和-0（二进制中0和-0不相等 标志位不同），还有特例就是NaN，前后都为NaN算没有变化
     if (
       (val1 === val2 && (val1 !== 0 || 1 / val1 === 1 / (val2: any))) ||
       (val1 !== val1 && val2 !== val2) // eslint-disable-line no-self-compare
@@ -36,5 +37,5 @@ export default function areHookInputsEqual(arr1: any[], arr2: any[]) {
     }
     return false;
   }
-  return true;
+  return true; 
 }
