@@ -651,7 +651,7 @@ if (typeof window !== 'undefined' && window._schedMock) { //非浏览器环境
       // Take the max of the two in case one of them was an anomaly due to
       // missed frame deadlines.
       activeFrameTime =
-        nextFrameTime < previousFrameTime ? previousFrameTime : nextFrameTime; //以上两个条件(连续两次-两帧动画)都小于activeFrameTime：33ms，说明浏览器是高刷新率的浏览器，即每秒大于30帧，所以平均一帧小于33ms，就修改activeFrameTime,基于上面不该小的话，会导致浏览器没有足够时间执行动画-考虑不同平台刷新率的问题
+        nextFrameTime < previousFrameTime ? previousFrameTime : nextFrameTime; //以上两个条件(连续两次-两帧动画)都小于activeFrameTime：33ms，说明浏览器是高刷新率的浏览器，即每秒大于30帧，所以平均一帧小于33ms，就修改activeFrameTime,基于上面不改小的话，会导致浏览器没有足够时间执行动画-考虑不同平台刷新率的问题
     } else {
       previousFrameTime = nextFrameTime; //第一次frameDeadline=0，进入此处
     }

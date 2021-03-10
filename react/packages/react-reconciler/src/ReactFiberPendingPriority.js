@@ -249,7 +249,7 @@ export function didExpireAtExpirationTime(
   const expirationTime = root.expirationTime;
   if (expirationTime !== NoWork && currentTime >= expirationTime) { //已经过期超时
     // The root has expired. Flush all work up to the current time.
-    root.nextExpirationTimeToWorkOn = currentTime;
+    root.nextExpirationTimeToWorkOn = currentTime; //表示这个任务直接执行就行了，不需要判断是否超过了帧时间
   }
 }
 

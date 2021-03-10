@@ -459,7 +459,7 @@ export function processUpdateQueue<State>(
         workInProgress.effectTag |= Callback;
         // Set this to null, in case it was mutated during an aborted render.
         update.nextEffect = null;
-        //把update加入queue.的effect链表
+        //把update加入queue的effect链表
         if (queue.lastEffect === null) {
           queue.firstEffect = queue.lastEffect = update;
         } else {

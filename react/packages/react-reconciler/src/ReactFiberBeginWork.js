@@ -623,7 +623,7 @@ function updateHostRoot(current, workInProgress, renderExpirationTime) {
       'file an issue.',
   );
   const nextProps = workInProgress.pendingProps;
-  const prevState = workInProgress.memoizedState;  //看更新具体update时，update.tag=updateState:return的state=update.payload（update.payload={element是对象不是function否则还要执行函数之后才是state=》state=update.payload， state.element=update.payload.element就是传入的渲染的内容）
+  const prevState = workInProgress.memoizedState;  
   const prevChildren = prevState !== null ? prevState.element : null; //重点：ReactDOM.render时，创建的update并没有给tag赋值=》默认的updateState，并且update.payload={element}={element: element}更新的内容element也就是ReactDOM.render的第一个参数：children-》reactElement
   processUpdateQueue(
     workInProgress,
@@ -1476,7 +1476,7 @@ function bailoutOnAlreadyFinishedWork(
   const childExpirationTime = workInProgress.childExpirationTime; //childExpirationTime优先级最高的子树中的节点
   if (
     childExpirationTime === NoWork ||
-    childExpirationTime > renderExpirationTime  //子树种也没有节点需要在本次渲染中完成的--跳过了子树的更新--非常大的优化点childExpirationTime很重要react16.5后才出现的
+    childExpirationTime > renderExpirationTime  //子树中也没有节点需要在本次渲染中完成的--跳过了子树的更新--非常大的优化点childExpirationTime很重要react16.5后才出现的
   ) {
     // The children don't have any work either. We can skip them.
     // TODO: Once we add back resuming, we should check if the children are

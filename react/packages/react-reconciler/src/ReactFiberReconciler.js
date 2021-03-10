@@ -133,7 +133,7 @@ function scheduleRootUpdate(
   const update = createUpdate(expirationTime); //创建了一个update对象
   // Caution: React DevTools currently depends on this property
   // being called "element".
-  update.payload = {element}; //设置update的属性
+  update.payload = {element}; //设置update的属性:{element: element}
 
   callback = callback === undefined ? null : callback;
   if (callback !== null) {

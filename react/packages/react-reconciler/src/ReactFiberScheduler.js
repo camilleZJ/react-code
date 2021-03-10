@@ -1124,7 +1124,7 @@ function performUnitOfWork(workInProgress: Fiber): Fiber | null {
 function workLoop(isYieldy) {
   if (!isYieldy) {
     // Flush work without yielding
-    while (nextUnitOfWork !== null) {  //不能中断：Sync或超时的任务  nextUnitOfWork=null说明说有子树都遍历处理完了，到了Fiber对象，而fiber对象的return为null
+    while (nextUnitOfWork !== null) {  //不能中断：Sync或超时的任务  nextUnitOfWork=null说明所有子树都遍历处理完了，到了Fiber对象，而fiber对象的return为null
       nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
     }
   } else {
@@ -1161,13 +1161,13 @@ function renderRoot(
     resetStack();
     nextRoot = root;
     nextRenderExpirationTime = expirationTime;
-    nextUnitOfWork = createWorkInProgress(  //WorkInProgress转换关系：(nextRoot)RootFiber.current=nextUnitOfWork(RootFiber)，拷贝出另一个fiber，来对其进行操作
+    nextUnitOfWork = createWorkInProgress(  //WorkInProgress转换关系：(nextRoot)FiberRoot.current=nextUnitOfWork(RootFiber)，拷贝出另一个fiber，来对其进行操作
       nextRoot.current,
       null,
       nextRenderExpirationTime,
     );
     root.pendingCommitExpirationTime = NoWork;
-    //以上是跟新root做一些初始化工作
+    //以上是更新root做一些初始化工作
 
     if (enableSchedulerTracing) {
       // Determine which interactions this batch of work currently includes,
@@ -2088,7 +2088,7 @@ function findHighestPriorityRoot() {
           highestPriorityWork = remainingExpirationTime;
           highestPriorityRoot = root;
         }
-        if (root === lastScheduledRoot) { //已经到最有一个了，优先级就是最高的了，停止遍历
+        if (root === lastScheduledRoot) { //已经到最后一个了，优先级就是最高的了，停止遍历
           break;
         }
         if (highestPriorityWork === Sync) { //同步是优先级最高的，不需要再遍历去找最高优先级的

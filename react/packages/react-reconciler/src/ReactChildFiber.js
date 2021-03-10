@@ -1171,7 +1171,7 @@ function ChildReconciler(shouldTrackSideEffects) { //参数shouldTrackSideEffect
       created.ref = coerceRef(returnFiber, currentFirstChild, element);  //ref类型：object、function、string，此方法是将string ref转换成一个方法，最终会把对象设置到inst.refs上
       created.return = returnFiber;
       return created;
-    }
+    }  
   }
 
   function reconcileSinglePortal(
