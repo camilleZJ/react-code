@@ -526,7 +526,7 @@ export function createFiberFromElement(
   if (__DEV__) {
     owner = element._owner;
   }
-  const type = element.type;  //react。createElement(type, config, children)中的type
+  const type = element.type;  //react.createElement(type, config, children)中的type
   const key = element.key;
   const pendingProps = element.props;
   const fiber = createFiberFromTypeAndProps(

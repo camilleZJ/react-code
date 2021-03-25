@@ -127,18 +127,12 @@ export function listenTo( //除了媒体事件绑定到元素上，其他事件�
   registrationName: string,
   mountAt: Document | Element,
 ) {
-<<<<<<< HEAD
   const isListening = getListeningForDocument(mountAt); //返回一个对象，里面是mountAt这个节点绑定的所有事件，初次绑定事件返回空{}
   const dependencies = registrationNameDependencies[registrationName]; //registrationNameDependencies:{onChange: [TOP_BLUR, TOP_CHANGE,...]}
-  //dependencies:绑定registrationName事件同时，需要绑定的其他依赖事件
-  for (let i = 0; i < dependencies.length; i++) { 
-=======
-  const isListening = getListeningForDocument(mountAt);
-  const dependencies = registrationNameDependencies[registrationName];
 
+  //dependencies:绑定registrationName事件同时，需要绑定的其他依赖事件
   //注意绑定的不是registrationName和dependencies中的事件，只是属性上定义了registrationName事件，最终绑定的是其dependencies中的所有事件
   for (let i = 0; i < dependencies.length; i++) {  
->>>>>>> refs/remotes/origin/master
     const dependency = dependencies[i];
     if (!(isListening.hasOwnProperty(dependency) && isListening[dependency])) { //mountAt节点上没有绑定过dependency事件=》去绑定
       switch (dependency) {
